@@ -1,93 +1,720 @@
-module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Use POST."
-    });
-  }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  try {
-    const { ideia } = req.body || {};
+  <title>Roblox AI Studio</title>
 
-    if (!ideia || typeof ideia !== "string") {
-      return res.status(400).json({
-        error: "Digite uma ideia para o jogo."
-      });
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    const resposta = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-5.6-luna",
-        instructions: `
-Você é uma IA especializada em criar projetos para Roblox Studio.
-
-Transforme a ideia do usuário em um pequeno projeto Roblox.
-
-Responda SOMENTE com JSON válido.
-
-Formato:
-{
-  "game_name": "Nome do jogo",
-  "description": "Descrição",
-  "scripts": [
-    {
-      "name": "NomeDoScript",
-      "location": "ServerScriptService",
-      "code": "código Luau"
-    }
-  ]
-}
-
-Gere código Luau válido e simples.
-`,
-        input: `Crie um projeto Roblox baseado nesta ideia:\n${ideia.trim().slice(0, 5000)}`
-      })
-    });
-
-    const dados = await resposta.json();
-
-    if (!resposta.ok) {
-      console.error("Erro OpenAI:", dados);
-
-      return res.status(500).json({
-        error: "Erro na API da IA.",
-        details: dados.error?.message || "Erro desconhecido."
-      });
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #25235a 0%, #10101c 45%, #08080e 100%);
+      color: white;
+      padding: 15px;
     }
 
-    const texto = dados.output_text;
-
-    if (!texto) {
-      throw new Error("A IA não retornou conteúdo.");
+    .app {
+      width: 100%;
+      max-width: 480px;
+      margin: auto;
+      padding-bottom: 30px;
     }
 
-    let projeto;
+    /* TOPO */
 
-    try {
-      projeto = JSON.parse(texto);
-    } catch {
-      const inicio = texto.indexOf("{");
-      const fim = texto.lastIndexOf("}");
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 5px 22px;
+    }
 
-      if (inicio === -1 || fim === -1) {
-        throw new Error("A resposta da IA não é um JSON válido.");
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .robot {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #6c63ff, #9b5cff);
+      font-size: 25px;
+      box-shadow: 0 8px 25px rgba(108, 99, 255, .35);
+    }
+
+    .brand h1 {
+      font-size: 19px;
+    }
+
+    .brand p {
+      color: #999;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .online {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #43e97b;
+      box-shadow: 0 0 12px #43e97b;
+    }
+
+    /* CARD PRINCIPAL */
+
+    .hero {
+      padding: 25px 20px;
+      border-radius: 25px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.09);
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      backdrop-filter: blur(15px);
+    }
+
+    .hero-title {
+      font-size: 27px;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .gradient {
+      background: linear-gradient(90deg, #8b7cff, #c178ff);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero-description {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+
+    /* TEXTAREA */
+
+    .input-title {
+      font-size: 13px;
+      color: #ddd;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      resize: none;
+      outline: none;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 17px;
+      padding: 15px;
+      color: white;
+      background: rgba(0,0,0,.3);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    textarea:focus {
+      border-color: #776cff;
+      box-shadow: 0 0 0 3px rgba(119,108,255,.12);
+    }
+
+    textarea::placeholder {
+      color: #666;
+    }
+
+    /* BOTÃO */
+
+    .create-button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 17px;
+      border: none;
+      border-radius: 17px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+
+      background: linear-gradient(135deg, #665cff, #9b5cff);
+
+      box-shadow:
+        0 10px 30px rgba(111,91,255,.3);
+
+      transition: .2s;
+    }
+
+    .create-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .create-button:active {
+      transform: scale(.98);
+    }
+
+    .create-button:disabled {
+      opacity: .55;
+      cursor: wait;
+      transform: none;
+    }
+
+    /* STATUS */
+
+    .status {
+      text-align: center;
+      min-height: 22px;
+      margin-top: 15px;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    /* RESULTADO */
+
+    #result {
+      margin-top: 18px;
+    }
+
+    .game-card {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .game-card h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .game-card > p {
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .script-card {
+      margin-top: 15px;
+      padding: 14px;
+      border-radius: 15px;
+      background: #0b0b12;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+
+    .script-card h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .location {
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    pre {
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #050509;
+      border-radius: 10px;
+      padding: 12px;
+      color: #d5d5d5;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    /* CARDS DE RECURSOS */
+
+    .section-title {
+      margin: 25px 4px 12px;
+      font-size: 15px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .feature {
+      padding: 16px;
+      border-radius: 17px;
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .feature-icon {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .feature h3 {
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .feature p {
+      color: #777;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    /* LOADING */
+
+    .loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: white;
+      animation: pulse 1s infinite;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: .15s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: .3s;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: .2;
+        transform: translateY(0);
       }
 
-      projeto = JSON.parse(texto.substring(inicio, fim + 1));
+      50% {
+        opacity: 1;
+        transform: translateY(-3px);
+      }
     }
 
-    return res.status(200).json(projeto);
+    /* RODAPÉ */
 
-  } catch (erro) {
-    console.error("Erro interno:", erro);
+    .footer {
+      text-align: center;
+      color: #555;
+      font-size: 11px;
+      margin-top: 25px;
+    }
 
-    return res.status(500).json({
-      error: "Erro interno do servidor.",
-      details: erro.message
+    @media (max-width: 360px) {
+      .hero-title {
+        font-size: 23px;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- TOPO -->
+
+    <div class="top">
+
+      <div class="brand">
+
+        <div class="robot">
+          🤖
+        </div>
+
+        <div>
+          <h1>Roblox AI Studio</h1>
+          <p>Seu criador de jogos com IA</p>
+        </div>
+
+      </div>
+
+      <div class="online"></div>
+
+    </div>
+
+
+    <!-- PRINCIPAL -->
+
+    <div class="hero">
+
+      <h2 class="hero-title">
+        Crie seu jogo
+        <span class="gradient">com IA</span>
+      </h2>
+
+      <p class="hero-description">
+        Descreva sua ideia e a inteligência artificial
+        irá transformar sua ideia em um projeto para
+        Roblox Studio.
+      </p>
+
+
+      <div class="input-title">
+        💡 Qual é a sua ideia?
+      </div>
+
+      <textarea
+        id="gameIdea"
+        placeholder="Exemplo:
+
+Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeira, construir uma base e enfrentar monstros durante a noite..."
+      ></textarea>
+
+
+      <button
+        class="create-button"
+        id="createButton"
+      >
+        🚀 CRIAR MEU JOGO
+      </button>
+
+
+      <div
+        class="status"
+        id="status"
+      ></div>
+
+
+      <div id="result"></div>
+
+    </div>
+
+
+    <!-- RECURSOS -->
+
+    <h2 class="section-title">
+      ✨ Recursos
+    </h2>
+
+    <div class="features">
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          🎮
+        </div>
+
+        <h3>
+          Ideias de jogos
+        </h3>
+
+        <p>
+          Transforme uma ideia em um projeto.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          🤖
+        </div>
+
+        <h3>
+          IA inteligente
+        </h3>
+
+        <p>
+          Gere scripts automaticamente.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          📜
+        </div>
+
+        <h3>
+          Scripts Luau
+        </h3>
+
+        <p>
+          Código organizado para Roblox.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          ⚡
+        </div>
+
+        <h3>
+          Rápido
+        </h3>
+
+        <p>
+          Crie projetos em poucos segundos.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="footer">
+      Roblox AI Studio • Criador de projetos com IA
+    </div>
+
+  </div>
+
+
+  <script>
+
+    const API_URL = "/api/criar-jogo";
+
+    const button =
+      document.getElementById("createButton");
+
+    const idea =
+      document.getElementById("gameIdea");
+
+    const status =
+      document.getElementById("status");
+
+    const result =
+      document.getElementById("result");
+
+
+    button.addEventListener("click", async () => {
+
+      const ideia = idea.value.trim();
+
+
+      if (!ideia) {
+
+        status.textContent =
+          "❌ Digite uma ideia primeiro.";
+
+        return;
+
+      }
+
+
+      button.disabled = true;
+
+      button.textContent = "⏳ CRIANDO...";
+
+
+      status.innerHTML = `
+        <div class="loading">
+          <span>🤖 A IA está criando</span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      `;
+
+
+      result.innerHTML = "";
+
+
+      try {
+
+        const resposta = await fetch(
+          API_URL,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              ideia: ideia
+            })
+          }
+        );
+
+
+        const texto =
+          await resposta.text();
+
+
+        let dados;
+
+
+        try {
+
+          dados =
+            JSON.parse(texto);
+
+        } catch {
+
+          throw new Error(
+            texto ||
+            "Resposta inválida do servidor."
+          );
+
+        }
+
+
+        if (!resposta.ok) {
+
+          throw new Error(
+            dados.error ||
+            "Erro no servidor."
+          );
+
+        }
+
+
+        status.textContent =
+          "✅ Seu jogo foi criado!";
+
+
+        let html = `
+
+          <div class="game-card">
+
+            <h2>
+              🎮 ${escapeHtml(
+                dados.game_name ||
+                "Meu Jogo Roblox"
+              )}
+            </h2>
+
+            <p>
+              ${escapeHtml(
+                dados.description ||
+                "Projeto criado pela IA."
+              )}
+            </p>
+
+        `;
+
+
+        if (
+          Array.isArray(
+            dados.scripts
+          )
+        ) {
+
+          dados.scripts.forEach(
+            (script) => {
+
+              html += `
+
+                <div class="script-card">
+
+                  <h3>
+                    📜 ${escapeHtml(
+                      script.name ||
+                      "Script"
+                    )}
+                  </h3>
+
+                  <div class="location">
+                    📁 Local:
+                    ${escapeHtml(
+                      script.location ||
+                      "ServerScriptService"
+                    )}
+                  </div>
+
+                  <pre>${escapeHtml(
+                    script.code ||
+                    ""
+                  )}</pre>
+
+                </div>
+
+              `;
+
+            }
+          );
+
+        }
+
+
+        html += `
+          </div>
+        `;
+
+
+        result.innerHTML =
+          html;
+
+
+      } catch (erro) {
+
+        status.textContent =
+          "❌ " +
+          erro.message;
+
+      } finally {
+
+        button.disabled =
+          false;
+
+        button.textContent =
+          "🚀 CRIAR MEU JOGO";
+
+      }
+
     });
-  }
-};
+
+
+    function escapeHtml(text) {
+
+      return String(text)
+
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+
+        .replace(
+          /</g,
+          "&lt;"
+        )
+
+        .replace(
+          />/g,
+          "&gt;"
+        )
+
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+
+    }
+
+  </script>
+
+</body>
+  </html>
