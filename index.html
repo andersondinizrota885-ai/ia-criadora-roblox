@@ -7,11 +7,28 @@
   <title>Roblox AI Studio</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+.project-card {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.project-card h2 {
+  margin-top: 0;
+}
+
+.download-button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
     body {
       font-family: Arial, sans-serif;
@@ -489,7 +506,129 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
 
   <script>
 
-    const API_URL = "/api/criar-jogo";
+    <script>
+const API_URL = "/api/criar-jogo";
+
+const button = document.getElementById("createButton");
+const idea = document.getElementById("gameIdea");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+
+let projetoAtual = null;
+
+button.addEventListener("click", async () => {
+  const ideia = idea.value.trim();
+
+  if (!ideia) {
+    status.textContent = "❌ Digite uma ideia primeiro.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "⏳ CRIANDO...";
+  status.textContent = "🤖 A IA está criando seu jogo...";
+  result.innerHTML = "";
+
+  try {
+    const resposta = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ideia: ideia
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(
+        dados.details || dados.error || "Erro ao criar o projeto."
+      );
+    }
+
+    projetoAtual = dados;
+
+    status.textContent = "✅ Seu jogo foi criado!";
+
+    result.innerHTML = `
+      <div class="project-card">
+        <h2>🎮 ${dados.nome || "Meu Jogo Roblox"}</h2>
+
+        <p>
+          ${dados.descricao || "Projeto criado pela IA."}
+        </p>
+
+        <button id="downloadButton" class="download-button">
+          📥 BAIXAR PROJETO
+        </button>
+      </div>
+    `;
+
+    document
+      .getElementById("downloadButton")
+      .addEventListener("click", baixarProjeto);
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    status.textContent = "❌ " + erro.message;
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent = "🚀 CRIAR MEU JOGO";
+
+  }
+});
+
+
+function baixarProjeto() {
+
+  if (!projetoAtual) {
+    alert("Crie um projeto primeiro.");
+    return;
+  }
+
+  const conteudo = JSON.stringify(
+    projetoAtual,
+    null,
+    2
+  );
+
+  const arquivo = new Blob(
+    [conteudo],
+    {
+      type: "application/json"
+    }
+  );
+
+  const url =
+    URL.createObjectURL(arquivo);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+
+  link.download =
+    (projetoAtual.nome || "projeto-roblox")
+      .replace(/[^a-z0-9áéíóúãõç _-]/gi, "")
+      .trim()
+      .replace(/\s+/g, "-")
+    + ".json";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+</script>
 
     const button =
       document.getElementById("createButton");
