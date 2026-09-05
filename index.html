@@ -1,107 +1,166 @@
-const OpenAI = require("openai");
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Criadora Roblox</title>
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      padding: 20px;
+      margin: 0;
+    }
 
-module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Método não permitido. Use POST."
-    });
+    .container {
+      max-width: 700px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 15px;
+      box-sizing: border-box;
+      border-radius: 10px;
+      border: none;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+    }
+
+    pre {
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🤖 IA Criadora Roblox</h1>
+
+  <textarea
+    id="gameIdea"
+    placeholder="Digite a ideia do seu jogo..."
+  ></textarea>
+
+  <button id="createButton">
+    🎮 Criar Jogo
+  </button>
+
+  <div id="status"></div>
+
+  <div id="result"></div>
+
+</div>
+
+<script>
+
+const API_URL = "/api/criar-jogo";
+
+const button = document.getElementById("createButton");
+const idea = document.getElementById("gameIdea");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+
+button.addEventListener("click", async () => {
+
+  const ideia = idea.value.trim();
+
+  if (!ideia) {
+    status.textContent = "❌ Digite uma ideia primeiro.";
+    return;
   }
+
+  button.disabled = true;
+  status.textContent = "⏳ Criando seu jogo...";
+  result.innerHTML = "";
 
   try {
-    const { ideia } = req.body || {};
 
-    if (!ideia || typeof ideia !== "string") {
-      return res.status(400).json({
-        error: "Envie uma ideia para o jogo."
-      });
-    }
-
-    const ideiaLimpa = ideia.trim().slice(0, 5000);
-
-    const resposta = await client.responses.create({
-      model: "gpt-5.6-luna",
-
-      instructions: `
-Você é uma IA especializada em criar projetos para Roblox Studio.
-
-Transforme a ideia do usuário em um pequeno projeto organizado,
-com scripts Luau que possam ser usados no Roblox Studio.
-
-Responda SOMENTE com JSON válido.
-Não use markdown.
-Não use blocos de código.
-Gere código Luau válido.
-
-Formato obrigatório:
-
-{
-  "game_name": "Nome do jogo",
-  "description": "Descrição curta do projeto",
-  "scripts": [
-    {
-      "name": "NomeDoScript",
-      "location": "ServerScriptService",
-      "code": "código Luau aqui"
-    }
-  ]
-}
-
-Crie scripts simples, organizados e seguros.
-Quando possível, indique onde cada script deve ficar no Roblox Studio.
-`,
-
-      input: `Crie um projeto Roblox baseado nesta ideia:
-
-${ideiaLimpa}`
+    const resposta = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ideia: ideia
+      })
     });
 
-    const texto = resposta.output_text;
+    const texto = await resposta.text();
 
-    if (!texto) {
-      throw new Error("A IA não retornou conteúdo.");
-    }
-
-    let projeto;
+    let dados;
 
     try {
-      projeto = JSON.parse(texto);
-    } catch (erro) {
-      const inicio = texto.indexOf("{");
-      const fim = texto.lastIndexOf("}");
-
-      if (inicio === -1 || fim === -1) {
-        throw new Error("A resposta da IA não é um JSON válido.");
-      }
-
-      projeto = JSON.parse(
-        texto.substring(inicio, fim + 1)
-      );
+      dados = JSON.parse(texto);
+    } catch {
+      throw new Error(texto);
     }
 
-    if (!projeto.game_name) {
-      projeto.game_name = "Meu Jogo Roblox";
+    if (!resposta.ok) {
+      throw new Error(dados.error || "Erro no servidor.");
     }
 
-    if (!projeto.description) {
-      projeto.description = "Projeto criado pela IA.";
-    }
+    status.textContent = "✅ Jogo criado!";
 
-    if (!Array.isArray(projeto.scripts)) {
-      projeto.scripts = [];
-    }
+    result.innerHTML = `
+      <h2>${dados.game_name || "Meu Jogo"}</h2>
+      <p>${dados.description || ""}</p>
+    `;
 
-    return res.status(200).json(projeto);
+    if (Array.isArray(dados.scripts)) {
+
+      dados.scripts.forEach(script => {
+
+        result.innerHTML += `
+          <h3>${script.name}</h3>
+          <p><b>Local:</b> ${script.location}</p>
+          <pre>${script.code}</pre>
+        `;
+
+      });
+
+    }
 
   } catch (erro) {
-    console.error("Erro:", erro);
 
-    return res.status(500).json({
-      error: "Não foi possível criar o jogo.",
-      details: erro.message
-    });
+    status.textContent = "❌ Erro: " + erro.message;
+
+  } finally {
+
+    button.disabled = false;
+
   }
-};
+
+});
+
+</script>
+
+</body>
+</html>
