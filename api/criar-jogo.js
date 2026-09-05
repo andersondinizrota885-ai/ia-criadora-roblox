@@ -1,7 +1,9 @@
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Use POST."
+    return res.status(500).json({
+  error: "Erro na API da IA.",
+  details: dados
+});
     });
   }
 
