@@ -802,4 +802,1573 @@
 
             <div class="card">
 
-              <div class="card
+              <div class="card-title">
+                🧱 OBJETOS
+              </div>
+
+              <div
+                class="card-content"
+                id="objectsContent"
+              ></div>
+
+            </div>
+
+
+            <!-- NPCS -->
+
+            <div class="card">
+
+              <div class="card-title">
+                🤖 NPCs
+              </div>
+
+              <div
+                class="card-content"
+                id="npcsContent"
+              ></div>
+
+            </div>
+
+
+            <!-- SYSTEMS -->
+
+            <div class="card">
+
+              <div class="card-title">
+                ⚙️ SISTEMAS
+              </div>
+
+              <div
+                class="card-content"
+                id="systemsContent"
+              ></div>
+
+            </div>
+
+
+            <!-- SCRIPTS -->
+
+            <div
+              class="card"
+              style="grid-column:1/-1"
+            >
+
+              <div class="card-title">
+                📜 SCRIPTS
+              </div>
+
+              <div
+                class="card-content"
+                id="scriptsContent"
+              ></div>
+
+            </div>
+
+
+            <!-- STEPS -->
+
+            <div
+              class="card"
+              style="grid-column:1/-1"
+            >
+
+              <div class="card-title">
+                📋 PASSOS
+              </div>
+
+              <div
+                class="card-content"
+                id="stepsContent"
+              ></div>
+
+            </div>
+
+
+          </div>
+
+
+          <!-- DOWNLOADS -->
+
+          <div class="downloads">
+
+            <button
+              class="download-btn"
+              onclick="downloadRBXLX()"
+            >
+              📥 Baixar Projeto .RBXLX
+            </button>
+
+            <button
+              class="download-btn"
+              onclick="downloadBuilder()"
+            >
+              🛠️ Baixar MapBuilder.lua
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- PROPERTIES -->
+
+    <aside class="panel right">
+
+      <div class="panel-title">
+        ⚙️ Properties
+      </div>
+
+      <div class="properties">
+
+        <div class="property">
+
+          <div class="property-name">
+            Nome
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyName"
+          >
+            Workspace
+          </div>
+
+        </div>
+
+
+        <div class="property">
+
+          <div class="property-name">
+            Classe
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyClass"
+          >
+            Workspace
+          </div>
+
+        </div>
+
+
+        <div class="property">
+
+          <div class="property-name">
+            Objetos
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyObjects"
+          >
+            0
+          </div>
+
+        </div>
+
+
+        <div class="property">
+
+          <div class="property-name">
+            NPCs
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyNPCs"
+          >
+            0
+          </div>
+
+        </div>
+
+
+        <div class="property">
+
+          <div class="property-name">
+            Scripts
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyScripts"
+          >
+            0
+          </div>
+
+        </div>
+
+
+        <div class="property">
+
+          <div class="property-name">
+            Status
+          </div>
+
+          <div
+            class="property-value"
+            id="propertyStatus"
+          >
+            Aguardando projeto
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+  </main>
+
+
+  <script>
+
+    let projetoAtual = null;
+
+
+    /* =========================
+       FOCAR IDEIA
+    ========================= */
+
+    function focusIdea() {
+
+      const campo =
+        document.getElementById("idea");
+
+      campo.focus();
+
+      campo.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+
+    }
+
+
+    /* =========================
+       GERAR JOGO
+    ========================= */
+
+    async function generateGame() {
+
+      const idea =
+        document
+          .getElementById("idea")
+          .value
+          .trim();
+
+      if (!idea) {
+
+        alert(
+          "Digite uma ideia para o jogo primeiro!"
+        );
+
+        focusIdea();
+
+        return;
+      }
+
+
+      const button =
+        document.getElementById(
+          "generateButton"
+        );
+
+      const loading =
+        document.getElementById(
+          "loading"
+        );
+
+      const result =
+        document.getElementById(
+          "result"
+        );
+
+
+      button.disabled = true;
+
+      button.innerText =
+        "🧠 CRIANDO...";
+
+      loading.classList.add(
+        "active"
+      );
+
+      result.style.display =
+        "none";
+
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/criar-jogo",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+                ideia: idea
+              })
+            }
+          );
+
+
+        let data;
+
+        try {
+
+          data =
+            await response.json();
+
+        } catch {
+
+          throw new Error(
+            "O servidor retornou uma resposta inválida."
+          );
+
+        }
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Erro ao criar o jogo."
+          );
+
+        }
+
+
+        projetoAtual = data;
+
+        showProject(
+          data
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+        alert(
+          "❌ Erro:\n\n" +
+          error.message
+        );
+
+      } finally {
+
+        button.disabled =
+          false;
+
+        button.innerText =
+          "🚀 CRIAR JOGO";
+
+        loading.classList.remove(
+          "active"
+        );
+
+      }
+
+    }
+
+
+    /* =========================
+       MOSTRAR PROJETO
+    ========================= */
+
+    function showProject(
+      project
+    ) {
+
+      document
+        .getElementById("result")
+        .style.display =
+        "block";
+
+
+      /* NOME */
+
+      document
+        .getElementById("gameName")
+        .innerText =
+        project.game_name ||
+        "Meu Jogo Roblox";
+
+
+      /* DESCRIÇÃO */
+
+      document
+        .getElementById("gameDescription")
+        .innerText =
+        project.description ||
+        "Projeto criado pela IA.";
+
+
+      /* GÊNERO */
+
+      document
+        .getElementById("gameGenre")
+        .innerText =
+        "🎮 " +
+        (
+          project.genre ||
+          "Roblox"
+        );
+
+
+      /* OBJETIVO */
+
+      document
+        .getElementById("gameObjective")
+        .innerText =
+        "🎯 " +
+        (
+          project.objective ||
+          "Divirta-se!"
+        );
+
+
+      /* MAPA */
+
+      renderMap(
+        project.map
+      );
+
+
+      /* OBJETOS */
+
+      renderObjects(
+        project.objects
+      );
+
+
+      /* NPCS */
+
+      renderNPCs(
+        project.npcs
+      );
+
+
+      /* SISTEMAS */
+
+      renderSystems(
+        project.systems
+      );
+
+
+      /* SCRIPTS */
+
+      renderScripts(
+        project.scripts,
+        project.builder_script
+      );
+
+
+      /* PASSOS */
+
+      renderSteps(
+        project.steps
+      );
+
+
+      /* PROPERTIES */
+
+      updateProperties(
+        project
+      );
+
+    }
+
+
+    /* =========================
+       MAPA
+    ========================= */
+
+    function renderMap(
+      map
+    ) {
+
+      const container =
+        document.getElementById(
+          "mapContent"
+        );
+
+
+      if (!map) {
+
+        container.innerHTML =
+          '<div class="empty">Nenhum mapa retornado.</div>';
+
+        return;
+      }
+
+
+      let html = "";
+
+
+      html += `
+        <div class="list-item">
+          <strong>🌎 Mapa</strong>
+          ${escapeHTML(
+            map.description ||
+            "Mapa gerado pela IA."
+          )}
+        </div>
+      `;
+
+
+      const areas =
+        Array.isArray(
+          map.areas
+        )
+          ? map.areas
+          : [];
+
+
+      areas.forEach(
+        area => {
+
+          html += `
+            <div class="list-item">
+              <strong>
+                📍 ${escapeHTML(
+                  area.name ||
+                  "Área"
+                )}
+              </strong>
+
+              ${escapeHTML(
+                area.description ||
+                ""
+              )}
+            </div>
+          `;
+
+        }
+      );
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       OBJETOS
+    ========================= */
+
+    function renderObjects(
+      objects
+    ) {
+
+      const container =
+        document.getElementById(
+          "objectsContent"
+        );
+
+
+      if (
+        !Array.isArray(objects) ||
+        objects.length === 0
+      ) {
+
+        container.innerHTML =
+          '<div class="empty">Nenhum objeto.</div>';
+
+        return;
+      }
+
+
+      let html = "";
+
+
+      objects.forEach(
+        object => {
+
+          const position =
+            Array.isArray(
+              object.position
+            )
+              ? object.position.join(
+                  ", "
+                )
+              : "N/A";
+
+
+          const size =
+            Array.isArray(
+              object.size
+            )
+              ? object.size.join(
+                  ", "
+                )
+              : "N/A";
+
+
+          html += `
+
+            <div class="list-item">
+
+              <strong>
+                🧱 ${escapeHTML(
+                  object.name ||
+                  "Part"
+                )}
+              </strong>
+
+              ${escapeHTML(
+                object.description ||
+                ""
+              )}
+
+              <br>
+
+              <small>
+                Tipo: ${
+                  escapeHTML(
+                    object.type ||
+                    "Part"
+                  )
+                }
+              </small>
+
+              <br>
+
+              <small>
+                Posição: ${position}
+              </small>
+
+              <br>
+
+              <small>
+                Tamanho: ${size}
+              </small>
+
+            </div>
+
+          `;
+
+        }
+      );
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       NPCS
+    ========================= */
+
+    function renderNPCs(
+      npcs
+    ) {
+
+      const container =
+        document.getElementById(
+          "npcsContent"
+        );
+
+
+      if (
+        !Array.isArray(npcs) ||
+        npcs.length === 0
+      ) {
+
+        container.innerHTML =
+          '<div class="empty">Nenhum NPC.</div>';
+
+        return;
+      }
+
+
+      let html = "";
+
+
+      npcs.forEach(
+        npc => {
+
+          html += `
+
+            <div class="list-item">
+
+              <strong>
+                🤖 ${escapeHTML(
+                  npc.name ||
+                  "NPC"
+                )}
+              </strong>
+
+              ${escapeHTML(
+                npc.description ||
+                ""
+              )}
+
+              <br>
+
+              <small>
+                Tipo:
+                ${escapeHTML(
+                  npc.type ||
+                  "NPC"
+                )}
+              </small>
+
+              <br>
+
+              <small>
+                ❤️ Vida:
+                ${npc.health ?? "N/A"}
+              </small>
+
+              <br>
+
+              <small>
+                ⚔️ Dano:
+                ${npc.damage ?? "N/A"}
+              </small>
+
+            </div>
+
+          `;
+
+        }
+      );
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       SISTEMAS
+    ========================= */
+
+    function renderSystems(
+      systems
+    ) {
+
+      const container =
+        document.getElementById(
+          "systemsContent"
+        );
+
+
+      if (
+        !Array.isArray(systems) ||
+        systems.length === 0
+      ) {
+
+        container.innerHTML =
+          '<div class="empty">Nenhum sistema.</div>';
+
+        return;
+      }
+
+
+      let html = "";
+
+
+      systems.forEach(
+        system => {
+
+          html += `
+
+            <div class="list-item">
+
+              <strong>
+                ⚙️ ${escapeHTML(
+                  system.name ||
+                  "Sistema"
+                )}
+              </strong>
+
+              ${escapeHTML(
+                system.description ||
+                ""
+              )}
+
+            </div>
+
+          `;
+
+        }
+      );
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       SCRIPTS
+    ========================= */
+
+    function renderScripts(
+      scripts,
+      builder
+    ) {
+
+      const container =
+        document.getElementById(
+          "scriptsContent"
+        );
+
+
+      let html = "";
+
+
+      if (
+        builder &&
+        builder.code
+      ) {
+
+        html += `
+
+          <div class="script">
+
+            <div class="script-header">
+              🛠️ ${escapeHTML(
+                builder.name ||
+                "MapBuilder"
+              )}
+
+            </div>
+
+            <pre>${escapeHTML(
+              builder.code
+            )}</pre>
+
+          </div>
+
+        `;
+
+      }
+
+
+      if (
+        Array.isArray(scripts)
+      ) {
+
+        scripts.forEach(
+          script => {
+
+            html += `
+
+              <div class="script">
+
+                <div class="script-header">
+
+                  📜 ${escapeHTML(
+                    script.name ||
+                    "Script"
+                  )}
+
+                  <br>
+
+                  <small
+                    style="color:#7e8798"
+                  >
+                    ${escapeHTML(
+                      script.location ||
+                      "ServerScriptService"
+                    )}
+                  </small>
+
+                </div>
+
+                <pre>${escapeHTML(
+                  script.code ||
+                  ""
+                )}</pre>
+
+              </div>
+
+            `;
+
+          }
+        );
+
+      }
+
+
+      if (!html) {
+
+        html =
+          '<div class="empty">Nenhum script gerado.</div>';
+
+      }
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       PASSOS
+    ========================= */
+
+    function renderSteps(
+      steps
+    ) {
+
+      const container =
+        document.getElementById(
+          "stepsContent"
+        );
+
+
+      if (
+        !Array.isArray(steps) ||
+        steps.length === 0
+      ) {
+
+        container.innerHTML =
+          '<div class="empty">Nenhum passo.</div>';
+
+        return;
+      }
+
+
+      let html = "";
+
+
+      steps.forEach(
+        (
+          step,
+          index
+        ) => {
+
+          html += `
+
+            <div class="list-item">
+
+              <strong>
+                ${index + 1}.
+                ${escapeHTML(
+                  step
+                )}
+              </strong>
+
+            </div>
+
+          `;
+
+        }
+      );
+
+
+      container.innerHTML =
+        html;
+
+    }
+
+
+    /* =========================
+       PROPERTIES
+    ========================= */
+
+    function updateProperties(
+      project
+    ) {
+
+      document
+        .getElementById(
+          "propertyName"
+        )
+        .innerText =
+        project.game_name ||
+        "Meu Jogo";
+
+
+      document
+        .getElementById(
+          "propertyClass"
+        )
+        .innerText =
+        "RobloxAIProject";
+
+
+      document
+        .getElementById(
+          "propertyObjects"
+        )
+        .innerText =
+        Array.isArray(
+          project.objects
+        )
+          ? project.objects.length
+          : 0;
+
+
+      document
+        .getElementById(
+          "propertyNPCs"
+        )
+        .innerText =
+        Array.isArray(
+          project.npcs
+        )
+          ? project.npcs.length
+          : 0;
+
+
+      document
+        .getElementById(
+          "propertyScripts"
+        )
+        .innerText =
+        Array.isArray(
+          project.scripts
+        )
+          ? project.scripts.length
+          : 0;
+
+
+      document
+        .getElementById(
+          "propertyStatus"
+        )
+        .innerText =
+        "Projeto criado com sucesso";
+
+    }
+
+
+    /* =========================
+       DOWNLOAD BUILDER
+    ========================= */
+
+    function downloadBuilder() {
+
+      if (
+        !projetoAtual ||
+        !projetoAtual.builder_script ||
+        !projetoAtual.builder_script.code
+      ) {
+
+        alert(
+          "Crie um jogo primeiro."
+        );
+
+        return;
+      }
+
+
+      const code =
+        projetoAtual
+          .builder_script
+          .code;
+
+
+      const blob =
+        new Blob(
+          [code],
+          {
+            type:
+              "text/plain;charset=utf-8"
+          }
+        );
+
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+
+      link.href = url;
+
+      link.download =
+        "MapBuilder.lua";
+
+      document
+        .body
+        .appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    }
+
+
+    /* =========================
+       DOWNLOAD RBXLX
+    ========================= */
+
+    function downloadRBXLX() {
+
+      if (!projetoAtual) {
+
+        alert(
+          "Crie um jogo primeiro."
+        );
+
+        return;
+
+      }
+
+
+      const xml =
+        createRBXLX(
+          projetoAtual
+        );
+
+
+      const blob =
+        new Blob(
+          [xml],
+          {
+            type:
+              "application/xml"
+          }
+        );
+
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+
+      link.href =
+        url;
+
+
+      const safeName =
+        (
+          projetoAtual.game_name ||
+          "RobloxGame"
+        )
+        .replace(
+          /[^a-z0-9-_]/gi,
+          "_"
+        );
+
+
+      link.download =
+        safeName +
+        ".rbxlx";
+
+
+      document
+        .body
+        .appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    }
+
+
+    /* =========================
+       CRIAR RBXLX
+    ========================= */
+
+    function createRBXLX(
+      project
+    ) {
+
+      let instances = "";
+
+
+      /* WORKSPACE */
+
+      instances += `
+        <Item class="Workspace" referent="RBXWorkspace">
+          <Properties>
+            <string name="Name">Workspace</string>
+          </Properties>
+        </Item>
+      `;
+
+
+      /* REPLICATED STORAGE */
+
+      instances += `
+        <Item class="ReplicatedStorage" referent="RBXReplicatedStorage">
+          <Properties>
+            <string name="Name">ReplicatedStorage</string>
+          </Properties>
+        </Item>
+      `;
+
+
+      /* STARTER GUI */
+
+      instances += `
+        <Item class="StarterGui" referent="RBXStarterGui">
+          <Properties>
+            <string name="Name">StarterGui</string>
+          </Properties>
+        </Item>
+      `;
+
+
+      /* STARTER PLAYER */
+
+      instances += `
+        <Item class="StarterPlayer" referent="RBXStarterPlayer">
+          <Properties>
+            <string name="Name">StarterPlayer</string>
+          </Properties>
+        </Item>
+      `;
+
+
+      /* SERVER SCRIPT SERVICE */
+
+      instances += `
+        <Item class="ServerScriptService" referent="RBXServerScriptService">
+          <Properties>
+            <string name="Name">ServerScriptService</string>
+          </Properties>
+      `;
+
+
+      /* BUILDER */
+
+      if (
+        project.builder_script &&
+        project.builder_script.code
+      ) {
+
+        instances += `
+
+          <Item
+            class="Script"
+            referent="RBXMapBuilder"
+          >
+
+            <Properties>
+
+              <string name="Name">
+                MapBuilder
+              </string>
+
+              <ProtectedString name="Source">
+                ${xmlEscape(
+                  project
+                    .builder_script
+                    .code
+                )}
+              </ProtectedString>
+
+            </Properties>
+
+          </Item>
+
+        `;
+
+      }
+
+
+      /* SCRIPTS */
+
+      if (
+        Array.isArray(
+          project.scripts
+        )
+      ) {
+
+        project.scripts.forEach(
+          (
+            script,
+            index
+          ) => {
+
+            if (!script.code)
+              return;
+
+
+            const location =
+              script.location ||
+              "ServerScriptService";
+
+
+            if (
+              location !==
+              "ServerScriptService"
+            ) {
+              return;
+            }
+
+
+            instances += `
+
+              <Item
+                class="Script"
+                referent="RBXScript${index}"
+              >
+
+                <Properties>
+
+                  <string name="Name">
+                    ${xmlEscape(
+                      script.name ||
+                      "GeneratedScript"
+                    )}
+                  </string>
+
+                  <ProtectedString name="Source">
+                    ${xmlEscape(
+                      script.code
+                    )}
+                  </ProtectedString>
+
+                </Properties>
+
+              </Item>
+
+            `;
+
+          }
+        );
+
+      }
+
+
+      instances += `
+        </Item>
+      `;
+
+
+      /* ROOT */
+
+      return `<?xml version="1.0" encoding="utf-8"?>
+
+<roblox
+  version="4"
+  xmlns:xmime="http://www.w3.org/2005/01/xmlmime"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd"
+>
+
+${instances}
+
+</roblox>`;
+
+    }
+
+
+    /* =========================
+       LIMPAR
+    ========================= */
+
+    function clearProject() {
+
+      projetoAtual =
+        null;
+
+
+      document
+        .getElementById(
+          "idea"
+        )
+        .value =
+        "";
+
+
+      document
+        .getElementById(
+          "result"
+        )
+        .style.display =
+        "none";
+
+
+      document
+        .getElementById(
+          "propertyName"
+        )
+        .innerText =
+        "Workspace";
+
+
+      document
+        .getElementById(
+          "propertyObjects"
+        )
+        .innerText =
+        "0";
+
+
+      document
+        .getElementById(
+          "propertyNPCs"
+        )
+        .innerText =
+        "0";
+
+
+      document
+        .getElementById(
+          "propertyScripts"
+        )
+        .innerText =
+        "0";
+
+
+      document
+        .getElementById(
+          "propertyStatus"
+        )
+        .innerText =
+        "Aguardando projeto";
+
+
+      focusIdea();
+
+    }
+
+
+    /* =========================
+       SEGURANÇA HTML
+    ========================= */
+
+    function escapeHTML(
+      value
+    ) {
+
+      if (
+        value === null ||
+        value === undefined
+      ) {
+
+        return "";
+
+      }
+
+
+      return String(value)
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+        .replace(
+          /</g,
+          "&lt;"
+        )
+        .replace(
+          />/g,
+          "&gt;"
+        )
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+
+    }
+
+
+    /* =========================
+       ESCAPAR XML
+    ========================= */
+
+    function xmlEscape(
+      value
+    ) {
+
+      if (
+        value === null ||
+        value === undefined
+      ) {
+
+        return "";
+
+      }
+
+
+      return String(value)
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+        .replace(
+          /</g,
+          "&lt;"
+        )
+        .replace(
+          />/g,
+          "&gt;"
+        );
+
+    }
+
+
+    /* =========================
+       ENTER PARA GERAR
+    ========================= */
+
+    document
+      .getElementById(
+        "idea"
+      )
+      .addEventListener(
+        "keydown",
+        function(event) {
+
+          if (
+            event.ctrlKey &&
+            event.key === "Enter"
+          ) {
+
+            generateGame();
+
+          }
+
+        }
+      );
+
+  </script>
+
+</body>
+</html>
