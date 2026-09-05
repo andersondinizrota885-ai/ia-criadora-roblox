@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox AI Creator</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#0b0b12;
+  color:white;
+  min-height:100vh;
+  padding:20px;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+}
+
+h1{
+  text-align:center;
+  font-size:32px;
+  margin:20px 0 10px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#aaa;
+  margin-bottom:30px;
+}
+
+.card{
+  background:#151521;
+  border:1px solid #29293a;
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+label{
+  display:block;
+  margin-bottom:10px;
+  font-weight:bold;
+}
+
+textarea{
+  width:100%;
+  min-height:160px;
+  resize:vertical;
+  background:#0d0d15;
+  color:white;
+  border:1px solid #353548;
+  border-radius:12px;
+  padding:15px;
+  font-size:16px;
+  outline:none;
+}
+
+textarea:focus{
+  border-color:#7c3cff;
+}
+
+button{
+  width:100%;
+  margin-top:15px;
+  padding:15px;
+  border:0;
+  border-radius:12px;
+  background:#7c3cff;
+  color:white;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+#status{
+  text-align:center;
+  color:#aaa;
+  margin-top:15px;
+}
+
+.result{
+  display:none;
+}
+
+pre{
+  background:#090910;
+  border:1px solid #29293a;
+  border-radius:12px;
+  padding:15px;
+  overflow:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+  margin-top:10px;
+}
+
+.script-title{
+  margin-top:20px;
+  color:#b99aff;
+}
+
+.download{
+  background:#16803c;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🤖 Roblox AI Creator</h1>
+
+<p class="subtitle">
+Crie ideias, sistemas e scripts para seus jogos Roblox
+</p>
+
+<div class="card">
+
+<label>🎮 Descreva seu jogo</label>
+
+<textarea id="gameIdea"
+placeholder="Exemplo: Crie um jogo onde os jogadores começam em uma ilha, coletam moedas, compram espadas e enfrentam um boss gigante."></textarea>
+
+<button onclick="criarJogo()">
+🚀 CRIAR JOGO
+</button>
+
+<p id="status"></p>
+
+</div>
+
+<div class="card result" id="result">
+
+<h2 id="gameName"></h2>
+
+<p id="description"></p>
+
+<div id="scripts"></div>
+
+<button class="download" onclick="baixarProjeto()">
+📥 BAIXAR PROJETO
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let projetoAtual = null;
+
+/*
+  IMPORTANTE:
+  Depois vamos colocar aqui o endereço
+  do servidor da sua IA.
+*/
+
+const API_URL = "COLOQUE_AQUI_A_URL_DO_SEU_BACKEND";
+
+async function criarJogo(){
+
+  const ideia = document
+    .getElementById("gameIdea")
+    .value
+    .trim();
+
+  const status = document.getElementById("status");
+
+  if(!ideia){
+    status.textContent =
+      "⚠️ Digite uma ideia para o jogo.";
+    return;
+  }
+
+  status.textContent =
+    "🤖 A IA está criando seu jogo...";
+
+  try{
+
+    const resposta = await fetch(API_URL,{
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        ideia:ideia
+      })
+
+    });
+
+    if(!resposta.ok){
+      throw new Error("Erro no servidor");
+    }
+
+    const dados = await resposta.json();
+
+    projetoAtual = dados;
+
+    document.getElementById("gameName")
+      .textContent =
+      "🎮 " + (dados.game_name || "Meu Jogo Roblox");
+
+    document.getElementById("description")
+      .textContent =
+      dados.description || "";
+
+    const scriptsDiv =
+      document.getElementById("scripts");
+
+    scriptsDiv.innerHTML = "";
+
+    if(dados.scripts){
+
+      for(const script of dados.scripts){
+
+        const title =
+          document.createElement("h3");
+
+        title.className = "script-title";
+
+        title.textContent =
+          "📜 " + script.name;
+
+        const code =
+          document.createElement("pre");
+
+        code.textContent =
+          script.code;
+
+        scriptsDiv.appendChild(title);
+        scriptsDiv.appendChild(code);
+      }
+
+    }
+
+    document.getElementById("result")
+      .style.display = "block";
+
+    status.textContent =
+      "✅ Jogo criado com sucesso!";
+
+  }catch(erro){
+
+    console.error(erro);
+
+    status.textContent =
+      "❌ Não foi possível conectar à IA. Vamos configurar o servidor no próximo passo.";
+
+  }
+
+}
+
+function baixarProjeto(){
+
+  if(!projetoAtual){
+    return;
+  }
+
+  const arquivo =
+    new Blob(
+      [JSON.stringify(projetoAtual,null,2)],
+      {type:"application/json"}
+    );
+
+  const url =
+    URL.createObjectURL(arquivo);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download = "jogo-roblox.json";
+
+  link.click();
+
+  URL.revokeObjectURL(url);
+
+}
+
+</script>
+
+</body>
+</html>
