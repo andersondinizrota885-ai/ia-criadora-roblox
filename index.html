@@ -1,106 +1,209 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Criadora Roblox</title>
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Método não permitido. Use POST."
-    });
-  }
-
-  try {
-    const { ideia } = req.body || {};
-
-    if (!ideia || typeof ideia !== "string") {
-      return res.status(400).json({
-        error: "Envie uma ideia para o jogo."
-      });
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0b12;
+      color: white;
+      padding: 20px;
     }
 
-    const ideiaLimpa = ideia.trim().slice(0, 5000);
-
-    const resposta = await client.responses.create({
-      model: "gpt-5.6-luna",
-
-      instructions: `
-Você é uma IA especializada em criar projetos para Roblox Studio.
-
-Transforme a ideia do usuário em um pequeno projeto organizado,
-com scripts Luau que possam ser usados no Roblox Studio.
-
-Responda SOMENTE com JSON válido.
-Não use markdown.
-Não use blocos de código.
-Gere código Luau válido.
-
-Formato obrigatório:
-
-{
-  "game_name": "Nome do jogo",
-  "description": "Descrição curta do projeto",
-  "scripts": [
-    {
-      "name": "NomeDoScript",
-      "location": "ServerScriptService",
-      "code": "código Luau aqui"
-    }
-  ]
-}
-
-Crie scripts simples, organizados e seguros.
-Quando possível, indique onde cada script deve ficar no Roblox Studio.
-`,
-
-      input: `Crie um projeto Roblox baseado nesta ideia:
-
-${ideiaLimpa}`
-    });
-
-    const texto = resposta.output_text;
-
-    if (!texto) {
-      throw new Error("A IA não retornou conteúdo.");
+    .container {
+      max-width: 700px;
+      margin: auto;
     }
 
-    let projeto;
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    p {
+      text-align: center;
+      color: #aaa;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      box-sizing: border-box;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #151520;
+      color: white;
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 15px;
+      padding: 15px;
+      border: 0;
+      border-radius: 12px;
+      background: #6c4cff;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 15px;
+      color: #aaa;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+      background: #151520;
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #08080d;
+      padding: 15px;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🤖 IA Criadora Roblox</h1>
+
+  <p>Descreva seu jogo e a IA vai criar os scripts.</p>
+
+  <textarea
+    id="gameIdea"
+    placeholder="Ex: Um jogo de parkour com moedas, fases e uma loja..."
+  ></textarea>
+
+  <button id="createButton">
+    🚀 Criar Jogo
+  </button>
+
+  <div id="status"></div>
+
+  <div class="result" id="result">
+    <h2 id="gameName"></h2>
+    <p id="description"></p>
+
+    <h3>Scripts:</h3>
+    <div id="scripts"></div>
+  </div>
+
+</div>
+
+<script>
+  const API_URL = "/api/criar-jogo";
+
+  const gameIdea = document.getElementById("gameIdea");
+  const createButton = document.getElementById("createButton");
+  const status = document.getElementById("status");
+  const result = document.getElementById("result");
+  const gameName = document.getElementById("gameName");
+  const description = document.getElementById("description");
+  const scripts = document.getElementById("scripts");
+
+  createButton.addEventListener("click", async () => {
+
+    const ideia = gameIdea.value.trim();
+
+    if (!ideia) {
+      status.textContent = "Digite uma ideia para o jogo.";
+      return;
+    }
+
+    createButton.disabled = true;
+    status.textContent = "🤖 Criando seu jogo...";
+    result.style.display = "none";
 
     try {
-      projeto = JSON.parse(texto);
-    } catch (erro) {
-      const inicio = texto.indexOf("{");
-      const fim = texto.lastIndexOf("}");
 
-      if (inicio === -1 || fim === -1) {
-        throw new Error("A resposta da IA não é um JSON válido.");
+      const resposta = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ideia: ideia
+        })
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.details || dados.error || "Erro no servidor.");
       }
 
-      projeto = JSON.parse(texto.substring(inicio, fim + 1));
+      gameName.textContent = dados.game_name || "Meu Jogo Roblox";
+      description.textContent = dados.description || "";
+
+      scripts.innerHTML = "";
+
+      if (Array.isArray(dados.scripts)) {
+
+        dados.scripts.forEach((script) => {
+
+          const div = document.createElement("div");
+
+          div.innerHTML = `
+            <h4>${script.name || "Script"}</h4>
+            <p>Local: ${script.location || "Roblox Studio"}</p>
+            <pre>${escapeHtml(script.code || "")}</pre>
+          `;
+
+          scripts.appendChild(div);
+        });
+
+      }
+
+      result.style.display = "block";
+      status.textContent = "✅ Jogo criado!";
+
+    } catch (erro) {
+
+      console.error(erro);
+
+      status.textContent =
+        "❌ Erro: " + erro.message;
+
+    } finally {
+
+      createButton.disabled = false;
+
     }
+  });
 
-    if (!projeto.game_name) {
-      projeto.game_name = "Meu Jogo Roblox";
-    }
-
-    if (!projeto.description) {
-      projeto.description = "Projeto criado pela IA.";
-    }
-
-    if (!Array.isArray(projeto.scripts)) {
-      projeto.scripts = [];
-    }
-
-    return res.status(200).json(projeto);
-
-  } catch (erro) {
-    console.error("Erro:", erro);
-
-    return res.status(500).json({
-      error: "Não foi possível criar o jogo.",
-      details: erro.message
-    });
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
-};
+</script>
+
+</body>
+</html>
