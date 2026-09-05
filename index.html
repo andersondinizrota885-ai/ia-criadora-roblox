@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Roblox AI Studio</title>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0b12;
-      color: white;
       padding: 20px;
+
+      background: #08080d;
+      color: white;
+
+      font-family: Arial, sans-serif;
     }
 
     .container {
@@ -37,25 +46,33 @@
 
     textarea {
       width: 100%;
-      min-height: 150px;
-      resize: vertical;
+      min-height: 160px;
+
       padding: 15px;
+
       border-radius: 12px;
-      border: 1px solid #333;
-      background: #15151f;
+      border: 1px solid #30303d;
+
+      background: #15151e;
       color: white;
+
       font-size: 16px;
+
       outline: none;
     }
 
     button {
       width: 100%;
-      border: 0;
-      border-radius: 12px;
+
       padding: 16px;
       margin-top: 15px;
+
+      border: none;
+      border-radius: 12px;
+
       font-size: 16px;
       font-weight: bold;
+
       cursor: pointer;
     }
 
@@ -65,11 +82,16 @@
     }
 
     #createButton:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
     }
 
     .download-button {
       background: #16a34a;
+      color: white;
+    }
+
+    .download-builder {
+      background: #2563eb;
       color: white;
     }
 
@@ -80,53 +102,115 @@
     }
 
     .game-card {
-      background: #15151f;
-      border: 1px solid #29293a;
+      background: #15151e;
+
+      border: 1px solid #292936;
+
       border-radius: 15px;
+
       padding: 20px;
+
       margin-top: 20px;
     }
 
     .info {
-      background: #0f0f18;
+      background: #0d0d14;
+
       padding: 15px;
-      border-radius: 10px;
+
       margin-top: 15px;
+
+      border-radius: 10px;
+    }
+
+    .area {
+      background: #11111a;
+
+      padding: 12px;
+
+      margin-top: 8px;
+
+      border-radius: 8px;
+    }
+
+    .object-card {
+      background: #0d0d14;
+
+      padding: 12px;
+
+      margin-top: 8px;
+
+      border-radius: 8px;
+    }
+
+    .npc-card {
+      background: #0d0d14;
+
+      padding: 12px;
+
+      margin-top: 8px;
+
+      border-radius: 8px;
+    }
+
+    .system-card {
+      background: #0d0d14;
+
+      padding: 12px;
+
+      margin-top: 8px;
+
+      border-radius: 8px;
     }
 
     .script-card {
-      margin-top: 20px;
-      background: #08080d;
-      border-radius: 10px;
+      background: #07070b;
+
       padding: 15px;
+
+      margin-top: 20px;
+
+      border-radius: 10px;
     }
 
     .location {
-      color: #8f8fff;
+      color: #9b8cff;
+
       margin-bottom: 10px;
     }
 
     pre {
       white-space: pre-wrap;
+
       overflow-x: auto;
-      background: #050509;
+
+      background: #030305;
+
       padding: 12px;
+
       border-radius: 8px;
-      font-size: 13px;
+
+      font-size: 12px;
     }
 
     .loading {
       display: flex;
+
       justify-content: center;
-      gap: 6px;
+
       align-items: center;
+
+      gap: 5px;
     }
 
     .dot {
       width: 6px;
       height: 6px;
+
       background: white;
+
       border-radius: 50%;
+
       animation: blink 1s infinite;
     }
 
@@ -139,30 +223,37 @@
     }
 
     @keyframes blink {
-      0%, 100% {
+
+      0%,
+      100% {
         opacity: .2;
       }
 
       50% {
         opacity: 1;
       }
+
     }
+
   </style>
+
 </head>
 
 <body>
 
   <div class="container">
 
-    <h1>🤖 Roblox AI Studio</h1>
+    <h1>
+      🤖 Roblox AI Studio
+    </h1>
 
     <div class="subtitle">
-      Crie projetos Roblox usando inteligência artificial
+      Crie mapas, NPCs, sistemas e scripts com IA
     </div>
 
     <textarea
       id="gameIdea"
-      placeholder="Digite a ideia do seu jogo..."
+      placeholder="Exemplo: Crie um jogo de sobrevivência em uma ilha com monstros, casas, floresta, sistema de moedas e loja."
     ></textarea>
 
     <button id="createButton">
@@ -175,389 +266,769 @@
 
   </div>
 
-  <script>
 
-    const API_URL = "/api/criar-jogo";
+<script>
 
-    const button =
-      document.getElementById("createButton");
+const API_URL =
+  "/api/criar-jogo";
 
-    const idea =
-      document.getElementById("gameIdea");
 
-    const status =
-      document.getElementById("status");
+const button =
+  document.getElementById(
+    "createButton"
+  );
 
-    const result =
-      document.getElementById("result");
 
-    let projetoAtual = null;
+const idea =
+  document.getElementById(
+    "gameIdea"
+  );
 
 
-    button.addEventListener("click", async () => {
+const status =
+  document.getElementById(
+    "status"
+  );
 
-      const ideia = idea.value.trim();
 
-      if (!ideia) {
-        status.textContent =
-          "❌ Digite uma ideia primeiro.";
-        return;
-      }
+const result =
+  document.getElementById(
+    "result"
+  );
 
-      button.disabled = true;
-      button.textContent = "⏳ CRIANDO...";
 
-      status.innerHTML = `
-        <div class="loading">
-          🤖 A IA está criando
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-        </div>
-      `;
+let projetoAtual = null;
 
-      result.innerHTML = "";
 
-      try {
+/* =========================
+   CRIAR JOGO
+========================= */
 
-        const resposta = await fetch(API_URL, {
-          method: "POST",
+button.addEventListener(
+  "click",
+  async () => {
 
-          headers: {
-            "Content-Type": "application/json"
-          },
+    const ideia =
+      idea.value.trim();
 
-          body: JSON.stringify({
-            ideia: ideia
-          })
-        });
 
+    if (!ideia) {
 
-        const texto =
-          await resposta.text();
+      status.textContent =
+        "❌ Digite uma ideia primeiro.";
 
+      return;
+    }
 
-        let dados;
 
-        try {
-          dados = JSON.parse(texto);
-        } catch {
-          throw new Error(
-            texto ||
-            "Resposta inválida do servidor."
-          );
-        }
+    button.disabled = true;
 
+    button.textContent =
+      "⏳ CRIANDO...";
 
-        if (!resposta.ok) {
 
-          throw new Error(
-            dados.details ||
-            dados.error ||
-            "Erro no servidor."
-          );
+    status.innerHTML = `
 
-        }
+      <div class="loading">
 
+        🤖 A IA está criando
 
-        projetoAtual = dados;
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
 
-        status.textContent =
-          "✅ Seu jogo foi criado!";
+      </div>
 
+    `;
 
-        let html = `
 
-          <div class="game-card">
+    result.innerHTML = "";
 
-            <h2>
-              🎮 ${
-                escapeHtml(
-                  dados.game_name ||
-                  "Meu Jogo Roblox"
-                )
-              }
-            </h2>
 
-            <p>
-              ${
-                escapeHtml(
-                  dados.description ||
-                  "Projeto criado pela IA."
-                )
-              }
-            </p>
+    try {
 
-            <button
-              id="downloadButton"
-              class="download-button"
-            >
-              📥 BAIXAR PROJETO ROBLOX
-            </button>
-
-        `;
-
-
-        if (dados.map) {
-
-          html += `
-
-            <div class="info">
-
-              🗺️ <strong>Mapa</strong>
-
-              <br><br>
-
-              ${
-                escapeHtml(
-                  typeof dados.map === "string"
-                    ? dados.map
-                    : dados.map.description || ""
-                )
-              }
-
-            </div>
-
-          `;
-
-        }
-
-
-        if (Array.isArray(dados.systems)) {
-
-          html += `
-
-            <div class="info">
-
-              ⚙️ <strong>Sistemas</strong>
-
-              <br><br>
-
-              ${
-                dados.systems
-                  .map(s =>
-                    escapeHtml(
-                      typeof s === "string"
-                        ? s
-                        : s.name || ""
-                    )
-                  )
-                  .join("<br>")
-              }
-
-            </div>
-
-          `;
-
-        }
-
-
-        if (Array.isArray(dados.scripts)) {
-
-          dados.scripts.forEach(script => {
-
-            html += `
-
-              <div class="script-card">
-
-                <h3>
-                  📜 ${
-                    escapeHtml(
-                      script.name ||
-                      "Script"
-                    )
-                  }
-                </h3>
-
-                <div class="location">
-
-                  📁 Local:
-                  ${
-                    escapeHtml(
-                      script.location ||
-                      "ServerScriptService"
-                    )
-                  }
-
-                </div>
-
-                <pre>${
-                  escapeHtml(
-                    script.code || ""
-                  )
-                }</pre>
-
-              </div>
-
-            `;
-
-          });
-
-        }
-
-
-        html += `
-          </div>
-        `;
-
-
-        result.innerHTML = html;
-
-
-        document
-          .getElementById("downloadButton")
-          .addEventListener(
-            "click",
-            baixarProjeto
-          );
-
-
-      } catch (erro) {
-
-        console.error(erro);
-
-        status.textContent =
-          "❌ " + erro.message;
-
-      } finally {
-
-        button.disabled = false;
-
-        button.textContent =
-          "🚀 CRIAR MEU JOGO";
-
-      }
-
-    });
-
-
-    function baixarProjeto() {
-
-      if (!projetoAtual) {
-
-        alert(
-          "Crie um projeto primeiro."
-        );
-
-        return;
-
-      }
-
-
-      const rbxlx =
-        criarArquivoRoblox(
-          projetoAtual
-        );
-
-
-      const blob =
-        new Blob(
-          [rbxlx],
+      const resposta =
+        await fetch(
+          API_URL,
           {
-            type:
-              "application/xml"
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              ideia: ideia
+            })
           }
         );
 
 
-      const url =
-        URL.createObjectURL(blob);
+      const texto =
+        await resposta.text();
 
 
-      const link =
-        document.createElement("a");
+      let dados;
 
 
-      link.href = url;
+      try {
 
-      link.download =
-        nomeArquivo(
-          projetoAtual.game_name ||
-          "MeuJogo"
-        ) + ".rbxlx";
+        dados =
+          JSON.parse(texto);
+
+      } catch {
+
+        throw new Error(
+          texto ||
+          "Resposta inválida do servidor."
+        );
+
+      }
 
 
-      document.body.appendChild(link);
+      if (!resposta.ok) {
 
-      link.click();
+        throw new Error(
+          dados.details ||
+          dados.error ||
+          "Erro no servidor."
+        );
 
-      link.remove();
+      }
 
-      URL.revokeObjectURL(url);
+
+      projetoAtual =
+        dados;
+
+
+      status.textContent =
+        "✅ Jogo criado com sucesso!";
+
+
+      mostrarProjeto(
+        dados
+      );
+
+
+    } catch (erro) {
+
+      console.error(
+        erro
+      );
+
+      status.textContent =
+        "❌ " +
+        erro.message;
+
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "🚀 CRIAR MEU JOGO";
+
+    }
+
+  }
+);
+
+
+/* =========================
+   MOSTRAR PROJETO
+========================= */
+
+function mostrarProjeto(
+  dados
+) {
+
+  let html = `
+
+    <div class="game-card">
+
+      <h2>
+        🎮
+        ${escapeHtml(
+          dados.game_name ||
+          "Meu Jogo Roblox"
+        )}
+      </h2>
+
+      <p>
+        ${escapeHtml(
+          dados.description ||
+          "Projeto criado pela IA."
+        )}
+      </p>
+
+      <p>
+        <strong>🎯 Objetivo:</strong><br>
+        ${escapeHtml(
+          dados.objective ||
+          ""
+        )}
+      </p>
+
+      <p>
+        <strong>🎮 Gênero:</strong>
+        ${escapeHtml(
+          dados.genre ||
+          ""
+        )}
+      </p>
+
+
+      <button
+        id="downloadButton"
+        class="download-button"
+      >
+        📥 BAIXAR PROJETO .RBXLX
+      </button>
+
+
+      <button
+        id="builderButton"
+        class="download-builder"
+      >
+        🛠️ BAIXAR BUILDER .LUA
+      </button>
+
+  `;
+
+
+  /* MAPA */
+
+  if (dados.map) {
+
+    html += `
+
+      <div class="info">
+
+        🗺️
+        <strong>MAPA</strong>
+
+        <br><br>
+
+        ${escapeHtml(
+          dados.map.description ||
+          ""
+        )}
+
+    `;
+
+
+    if (
+      Array.isArray(
+        dados.map.areas
+      )
+    ) {
+
+      dados.map.areas.forEach(
+        area => {
+
+          html += `
+
+            <div class="area">
+
+              <strong>
+                📍
+                ${escapeHtml(
+                  area.name ||
+                  "Área"
+                )}
+              </strong>
+
+              <br>
+
+              ${escapeHtml(
+                area.description ||
+                ""
+              )}
+
+            </div>
+
+          `;
+
+        }
+      );
 
     }
 
 
-    function criarArquivoRoblox(projeto) {
+    html += `
+      </div>
+    `;
 
-      let scripts = "";
-
-
-      if (
-        Array.isArray(
-          projeto.scripts
-        )
-      ) {
-
-        projeto.scripts.forEach(
-          script => {
-
-            const nome =
-              escapeXml(
-                script.name ||
-                "Script"
-              );
+  }
 
 
-            const codigo =
-              escapeXml(
-                script.code ||
-                ""
-              );
+  /* OBJETOS */
+
+  if (
+    Array.isArray(
+      dados.objects
+    )
+  ) {
+
+    html += `
+
+      <div class="info">
+
+        🧱
+        <strong>OBJETOS DO MAPA</strong>
+
+    `;
 
 
-            scripts += `
+    dados.objects.forEach(
+      objeto => {
 
-              <Item
-                class="Script"
-                referent="RBX_SCRIPT_${Math.random()
-                  .toString(36)
-                  .substring(2)}"
-              >
+        html += `
 
-                <Properties>
+          <div class="object-card">
 
-                  <string
-                    name="Name"
-                  >
-                    ${nome}
-                  </string>
+            <strong>
+              ${escapeHtml(
+                objeto.name ||
+                "Objeto"
+              )}
+            </strong>
 
-                  <ProtectedString
-                    name="Source"
-                  >
-                    ${codigo}
-                  </ProtectedString>
+            <br>
 
-                </Properties>
+            Tipo:
+            ${escapeHtml(
+              objeto.type ||
+              "Part"
+            )}
 
-              </Item>
+            <br>
 
-            `;
+            ${escapeHtml(
+              objeto.description ||
+              ""
+            )}
 
-          }
-        );
+          </div>
+
+        `;
 
       }
+    );
 
 
-      return `<?xml version="1.0" encoding="utf-8"?>
+    html += `
+      </div>
+    `;
+
+  }
+
+
+  /* NPCS */
+
+  if (
+    Array.isArray(
+      dados.npcs
+    )
+  ) {
+
+    html += `
+
+      <div class="info">
+
+        👾
+        <strong>NPCS</strong>
+
+    `;
+
+
+    dados.npcs.forEach(
+      npc => {
+
+        html += `
+
+          <div class="npc-card">
+
+            <strong>
+              ${escapeHtml(
+                npc.name ||
+                "NPC"
+              )}
+            </strong>
+
+            <br>
+
+            ❤️ Vida:
+            ${escapeHtml(
+              npc.health ||
+              100
+            )}
+
+            <br>
+
+            ⚔️ Dano:
+            ${escapeHtml(
+              npc.damage ||
+              10
+            )}
+
+            <br>
+
+            ${escapeHtml(
+              npc.description ||
+              ""
+            )}
+
+          </div>
+
+        `;
+
+      }
+    );
+
+
+    html += `
+      </div>
+    `;
+
+  }
+
+
+  /* SISTEMAS */
+
+  if (
+    Array.isArray(
+      dados.systems
+    )
+  ) {
+
+    html += `
+
+      <div class="info">
+
+        ⚙️
+        <strong>SISTEMAS</strong>
+
+    `;
+
+
+    dados.systems.forEach(
+      sistema => {
+
+        html += `
+
+          <div class="system-card">
+
+            <strong>
+              ${escapeHtml(
+                sistema.name ||
+                "Sistema"
+              )}
+            </strong>
+
+            <br>
+
+            ${escapeHtml(
+              sistema.description ||
+              ""
+            )}
+
+          </div>
+
+        `;
+
+      }
+    );
+
+
+    html += `
+      </div>
+    `;
+
+  }
+
+
+  /* SCRIPTS */
+
+  if (
+    Array.isArray(
+      dados.scripts
+    )
+  ) {
+
+    dados.scripts.forEach(
+      script => {
+
+        html += `
+
+          <div class="script-card">
+
+            <h3>
+
+              📜
+              ${escapeHtml(
+                script.name ||
+                "Script"
+              )}
+
+            </h3>
+
+            <div class="location">
+
+              📁 Local:
+
+              ${escapeHtml(
+                script.location ||
+                "ServerScriptService"
+              )}
+
+            </div>
+
+            <p>
+
+              ${escapeHtml(
+                script.description ||
+                ""
+              )}
+
+            </p>
+
+            <pre>${escapeHtml(
+              script.code ||
+              ""
+            )}</pre>
+
+          </div>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  /* FINAL */
+
+  html += `
+
+      <div class="info">
+
+        💡
+        <strong>
+          PROJETO GERADO
+        </strong>
+
+        <br><br>
+
+        O Builder contém o código
+        responsável por montar a
+        estrutura inicial do mapa
+        dentro do Roblox Studio.
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  result.innerHTML =
+    html;
+
+
+  document
+    .getElementById(
+      "downloadButton"
+    )
+    .addEventListener(
+      "click",
+      baixarProjeto
+    );
+
+
+  document
+    .getElementById(
+      "builderButton"
+    )
+    .addEventListener(
+      "click",
+      baixarBuilder
+    );
+
+}
+
+
+/* =========================
+   BAIXAR RBXLX
+========================= */
+
+function baixarProjeto() {
+
+  if (!projetoAtual) {
+
+    alert(
+      "Crie um projeto primeiro."
+    );
+
+    return;
+  }
+
+
+  const arquivo =
+    criarRBXLX(
+      projetoAtual
+    );
+
+
+  const blob =
+    new Blob(
+      [arquivo],
+      {
+        type:
+          "application/xml"
+      }
+    );
+
+
+  baixarBlob(
+    blob,
+    nomeArquivo(
+      projetoAtual.game_name ||
+      "MeuJogo"
+    ) + ".rbxlx"
+  );
+
+}
+
+
+/* =========================
+   BAIXAR BUILDER
+========================= */
+
+function baixarBuilder() {
+
+  if (!projetoAtual) {
+
+    alert(
+      "Crie um projeto primeiro."
+    );
+
+    return;
+  }
+
+
+  const builder =
+    projetoAtual
+      .builder_script
+      ?.code;
+
+
+  if (!builder) {
+
+    alert(
+      "A IA não gerou um Builder."
+    );
+
+    return;
+  }
+
+
+  const blob =
+    new Blob(
+      [builder],
+      {
+        type:
+          "text/plain"
+      }
+    );
+
+
+  baixarBlob(
+    blob,
+    "MapBuilder.lua"
+  );
+
+}
+
+
+/* =========================
+   CRIAR RBXLX
+========================= */
+
+function criarRBXLX(
+  projeto
+) {
+
+  let scripts = "";
+
+
+  /* BUILDER */
+
+  if (
+    projeto
+      .builder_script
+      ?.code
+  ) {
+
+    scripts += criarScriptXML(
+      projeto
+        .builder_script
+        .name ||
+        "MapBuilder",
+
+      projeto
+        .builder_script
+        .code,
+
+      "RBX_BUILDER"
+    );
+
+  }
+
+
+  /* SCRIPTS NORMAIS */
+
+  if (
+    Array.isArray(
+      projeto.scripts
+    )
+  ) {
+
+    projeto.scripts.forEach(
+      (script, index) => {
+
+        if (
+          script.code
+        ) {
+
+          scripts +=
+            criarScriptXML(
+              script.name ||
+              "Script_" +
+              index,
+
+              script.code,
+
+              "RBX_SCRIPT_" +
+              index
+            );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  return `<?xml version="1.0" encoding="utf-8"?>
 
 <roblox
   version="4"
   studio_place_id="0"
-  xmlns:xmime="http://www.w3.org/2001/XMLSchema-instance"
-  xmime:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd"
 >
 
   <External>null</External>
@@ -649,95 +1120,200 @@
 
 </roblox>`;
 
-    }
+}
 
 
-    function escapeXml(text) {
+/* =========================
+   SCRIPT XML
+========================= */
 
-      return String(text)
+function criarScriptXML(
+  nome,
+  codigo,
+  referent
+) {
 
-        .replace(
-          /&/g,
-          "&amp;"
-        )
+  return `
 
-        .replace(
-          /</g,
-          "&lt;"
-        )
+    <Item
+      class="Script"
+      referent="${escapeXml(
+        referent
+      )}"
+    >
 
-        .replace(
-          />/g,
-          "&gt;"
-        )
+      <Properties>
 
-        .replace(
-          /"/g,
-          "&quot;"
-        )
+        <string name="Name">
+          ${escapeXml(nome)}
+        </string>
 
-        .replace(
-          /'/g,
-          "&apos;"
-        );
+        <ProtectedString name="Source">
+          ${escapeXml(codigo)}
+        </ProtectedString>
 
-    }
+      </Properties>
 
+    </Item>
 
-    function escapeHtml(text) {
+  `;
 
-      return String(text)
-
-        .replace(
-          /&/g,
-          "&amp;"
-        )
-
-        .replace(
-          /</g,
-          "&lt;"
-        )
-
-        .replace(
-          />/g,
-          "&gt;"
-        )
-
-        .replace(
-          /"/g,
-          "&quot;"
-        )
-
-        .replace(
-          /'/g,
-          "&#039;"
-        );
-
-    }
+}
 
 
-    function nomeArquivo(nome) {
+/* =========================
+   DOWNLOAD
+========================= */
 
-      return String(nome)
+function baixarBlob(
+  blob,
+  nome
+) {
 
-        .replace(
-          /[<>:"/\\|?*]/g,
-          ""
-        )
+  const url =
+    URL.createObjectURL(
+      blob
+    );
 
-        .replace(
-          /\s+/g,
-          "_"
-        )
 
-        .slice(
-          0,
-          80
-        );
+  const link =
+    document.createElement(
+      "a"
+    );
 
-    }
 
-  </script>
+  link.href =
+    url;
+
+  link.download =
+    nome;
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+
+  link.remove();
+
+
+  setTimeout(
+    () =>
+      URL.revokeObjectURL(
+        url
+      ),
+    1000
+  );
+
+}
+
+
+/* =========================
+   ESCAPES
+========================= */
+
+function escapeXml(
+  text
+) {
+
+  return String(
+    text
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&apos;"
+    );
+
+}
+
+
+function escapeHtml(
+  text
+) {
+
+  return String(
+    text
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+function nomeArquivo(
+  nome
+) {
+
+  return String(
+    nome
+  )
+
+    .replace(
+      /[<>:"/\\|?*]/g,
+      ""
+    )
+
+    .replace(
+      /\s+/g,
+      "_"
+    )
+
+    .slice(
+      0,
+      80
+    );
+
+}
+
+</script>
 
 </body>
+
 </html>
