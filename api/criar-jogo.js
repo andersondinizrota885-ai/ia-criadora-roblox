@@ -2,7 +2,8 @@
 
 const MODELOS = [
   "gemini-3.6-flash",
-  "gemini-3.6-flash-lite"
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
 ];
 
 const MAX_TENTATIVAS = 3;
