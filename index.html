@@ -14,317 +14,137 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top, #25235a 0%, #10101c 45%, #08080e 100%);
+      background: #0b0b12;
       color: white;
-      padding: 15px;
+      padding: 20px;
     }
 
-    .app {
-      width: 100%;
-      max-width: 480px;
+    .container {
+      max-width: 900px;
       margin: auto;
-      padding-bottom: 30px;
     }
 
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 5px 22px;
+    h1 {
+      text-align: center;
+      margin-bottom: 5px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .robot {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 15px;
-      background: linear-gradient(135deg, #6c63ff, #9b5cff);
-      font-size: 25px;
-      box-shadow: 0 8px 25px rgba(108, 99, 255, .35);
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 19px;
-    }
-
-    .brand p {
-      color: #999;
-      font-size: 12px;
-      margin: 3px 0 0;
-    }
-
-    .online {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #43e97b;
-      box-shadow: 0 0 12px #43e97b;
-    }
-
-    .hero {
-      padding: 25px 20px;
-      border-radius: 25px;
-      background: rgba(255,255,255,.07);
-      border: 1px solid rgba(255,255,255,.09);
-      box-shadow: 0 20px 60px rgba(0,0,0,.25);
-      backdrop-filter: blur(15px);
-    }
-
-    .hero-title {
-      font-size: 27px;
-      line-height: 1.15;
-      margin: 0 0 10px;
-    }
-
-    .gradient {
-      background: linear-gradient(90deg, #8b7cff, #c178ff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .hero-description {
+    .subtitle {
+      text-align: center;
       color: #aaa;
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 22px;
-    }
-
-    .input-title {
-      font-size: 13px;
-      color: #ddd;
-      margin-bottom: 8px;
-      font-weight: bold;
+      margin-bottom: 25px;
     }
 
     textarea {
       width: 100%;
       min-height: 150px;
-      resize: none;
-      outline: none;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 17px;
+      resize: vertical;
       padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #15151f;
       color: white;
-      background: rgba(0,0,0,.3);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 16px;
+      outline: none;
     }
 
-    textarea:focus {
-      border-color: #776cff;
-      box-shadow: 0 0 0 3px rgba(119,108,255,.12);
-    }
-
-    textarea::placeholder {
-      color: #666;
-    }
-
-    .create-button,
-    .download-button {
+    button {
       width: 100%;
-      margin-top: 14px;
-      padding: 17px;
-      border: none;
-      border-radius: 17px;
-      color: white;
+      border: 0;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 15px;
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      transition: .2s;
     }
 
-    .create-button {
-      background: linear-gradient(135deg, #665cff, #9b5cff);
-      box-shadow: 0 10px 30px rgba(111,91,255,.3);
+    #createButton {
+      background: #6c4cff;
+      color: white;
+    }
+
+    #createButton:disabled {
+      opacity: 0.6;
     }
 
     .download-button {
-      background: linear-gradient(135deg, #18a558, #35d07f);
-      box-shadow: 0 10px 25px rgba(24,165,88,.25);
+      background: #16a34a;
+      color: white;
     }
 
-    .create-button:hover,
-    .download-button:hover {
-      transform: translateY(-2px);
-    }
-
-    .create-button:active,
-    .download-button:active {
-      transform: scale(.98);
-    }
-
-    .create-button:disabled {
-      opacity: .55;
-      cursor: wait;
-      transform: none;
-    }
-
-    .status {
+    #status {
       text-align: center;
-      min-height: 22px;
-      margin-top: 15px;
-      color: #aaa;
-      font-size: 13px;
-    }
-
-    #result {
-      margin-top: 18px;
+      margin: 20px 0;
+      font-weight: bold;
     }
 
     .game-card {
-      padding: 18px;
-      border-radius: 20px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-    }
-
-    .game-card h2 {
-      font-size: 20px;
-      margin: 0 0 8px;
-    }
-
-    .game-card > p {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.5;
+      background: #15151f;
+      border: 1px solid #29293a;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
     }
 
     .info {
+      background: #0f0f18;
+      padding: 15px;
+      border-radius: 10px;
       margin-top: 15px;
-      padding: 13px;
-      border-radius: 13px;
-      background: rgba(255,255,255,.04);
-      color: #bbb;
-      font-size: 13px;
-      line-height: 1.5;
     }
 
     .script-card {
-      margin-top: 15px;
-      padding: 14px;
-      border-radius: 15px;
-      background: #0b0b12;
-      border: 1px solid rgba(255,255,255,.06);
-    }
-
-    .script-card h3 {
-      font-size: 14px;
-      margin: 0 0 8px;
+      margin-top: 20px;
+      background: #08080d;
+      border-radius: 10px;
+      padding: 15px;
     }
 
     .location {
-      color: #888;
-      font-size: 12px;
+      color: #8f8fff;
       margin-bottom: 10px;
     }
 
     pre {
-      overflow-x: auto;
       white-space: pre-wrap;
-      word-break: break-word;
+      overflow-x: auto;
       background: #050509;
-      border-radius: 10px;
       padding: 12px;
-      color: #d5d5d5;
-      font-size: 11px;
-      line-height: 1.5;
-    }
-
-    .section-title {
-      margin: 25px 4px 12px;
-      font-size: 15px;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .feature {
-      padding: 16px;
-      border-radius: 17px;
-      background: rgba(255,255,255,.055);
-      border: 1px solid rgba(255,255,255,.07);
-    }
-
-    .feature-icon {
-      font-size: 22px;
-      margin-bottom: 8px;
-    }
-
-    .feature h3 {
+      border-radius: 8px;
       font-size: 13px;
-      margin: 0 0 5px;
-    }
-
-    .feature p {
-      color: #777;
-      font-size: 11px;
-      line-height: 1.4;
-      margin: 0;
     }
 
     .loading {
-      display: inline-flex;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
       align-items: center;
-      gap: 7px;
     }
 
     .dot {
       width: 6px;
       height: 6px;
-      border-radius: 50%;
       background: white;
-      animation: pulse 1s infinite;
+      border-radius: 50%;
+      animation: blink 1s infinite;
     }
 
     .dot:nth-child(2) {
-      animation-delay: .15s;
+      animation-delay: .2s;
     }
 
     .dot:nth-child(3) {
-      animation-delay: .3s;
+      animation-delay: .4s;
     }
 
-    @keyframes pulse {
+    @keyframes blink {
       0%, 100% {
         opacity: .2;
-        transform: translateY(0);
       }
 
       50% {
         opacity: 1;
-        transform: translateY(-3px);
-      }
-    }
-
-    .footer {
-      text-align: center;
-      color: #555;
-      font-size: 11px;
-      margin-top: 25px;
-    }
-
-    @media (max-width: 360px) {
-      .hero-title {
-        font-size: 23px;
-      }
-
-      .features {
-        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -332,119 +152,55 @@
 
 <body>
 
-  <div class="app">
+  <div class="container">
 
-    <div class="top">
+    <h1>🤖 Roblox AI Studio</h1>
 
-      <div class="brand">
-
-        <div class="robot">🤖</div>
-
-        <div>
-          <h1>Roblox AI Studio</h1>
-          <p>Seu criador de jogos com IA</p>
-        </div>
-
-      </div>
-
-      <div class="online"></div>
-
+    <div class="subtitle">
+      Crie projetos Roblox usando inteligência artificial
     </div>
 
-    <div class="hero">
+    <textarea
+      id="gameIdea"
+      placeholder="Digite a ideia do seu jogo..."
+    ></textarea>
 
-      <h2 class="hero-title">
-        Crie seu jogo
-        <span class="gradient">com IA</span>
-      </h2>
+    <button id="createButton">
+      🚀 CRIAR MEU JOGO
+    </button>
 
-      <p class="hero-description">
-        Descreva sua ideia e a inteligência artificial
-        irá transformar sua ideia em um projeto para
-        Roblox Studio.
-      </p>
+    <div id="status"></div>
 
-      <div class="input-title">
-        💡 Qual é a sua ideia?
-      </div>
-
-      <textarea
-        id="gameIdea"
-        placeholder="Exemplo:
-
-Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeira, construir uma base e enfrentar monstros durante a noite..."
-      ></textarea>
-
-      <button
-        class="create-button"
-        id="createButton"
-      >
-        🚀 CRIAR MEU JOGO
-      </button>
-
-      <div
-        class="status"
-        id="status"
-      ></div>
-
-      <div id="result"></div>
-
-    </div>
-
-    <h2 class="section-title">
-      ✨ Recursos
-    </h2>
-
-    <div class="features">
-
-      <div class="feature">
-        <div class="feature-icon">🎮</div>
-        <h3>Ideias de jogos</h3>
-        <p>Transforme uma ideia em um projeto.</p>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon">🤖</div>
-        <h3>IA inteligente</h3>
-        <p>Gere scripts automaticamente.</p>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon">📜</div>
-        <h3>Scripts Luau</h3>
-        <p>Código organizado para Roblox.</p>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon">⚡</div>
-        <h3>Rápido</h3>
-        <p>Crie projetos em poucos segundos.</p>
-      </div>
-
-    </div>
-
-    <div class="footer">
-      Roblox AI Studio • Criador de projetos com IA
-    </div>
+    <div id="result"></div>
 
   </div>
 
   <script>
+
     const API_URL = "/api/criar-jogo";
 
-    const button = document.getElementById("createButton");
-    const idea = document.getElementById("gameIdea");
-    const status = document.getElementById("status");
-    const result = document.getElementById("result");
+    const button =
+      document.getElementById("createButton");
+
+    const idea =
+      document.getElementById("gameIdea");
+
+    const status =
+      document.getElementById("status");
+
+    const result =
+      document.getElementById("result");
 
     let projetoAtual = null;
+
 
     button.addEventListener("click", async () => {
 
       const ideia = idea.value.trim();
 
       if (!ideia) {
-        status.textContent = "❌ Digite uma ideia primeiro.";
+        status.textContent =
+          "❌ Digite uma ideia primeiro.";
         return;
       }
 
@@ -453,7 +209,7 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
 
       status.innerHTML = `
         <div class="loading">
-          <span>🤖 A IA está criando</span>
+          🤖 A IA está criando
           <span class="dot"></span>
           <span class="dot"></span>
           <span class="dot"></span>
@@ -476,7 +232,10 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
           })
         });
 
-        const texto = await resposta.text();
+
+        const texto =
+          await resposta.text();
+
 
         let dados;
 
@@ -484,115 +243,166 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
           dados = JSON.parse(texto);
         } catch {
           throw new Error(
-            texto || "Resposta inválida do servidor."
+            texto ||
+            "Resposta inválida do servidor."
           );
         }
 
+
         if (!resposta.ok) {
+
           throw new Error(
             dados.details ||
             dados.error ||
             "Erro no servidor."
           );
+
         }
+
 
         projetoAtual = dados;
 
-        status.textContent = "✅ Seu jogo foi criado!";
+        status.textContent =
+          "✅ Seu jogo foi criado!";
+
 
         let html = `
+
           <div class="game-card">
 
             <h2>
-              🎮 ${escapeHtml(
-                dados.game_name ||
-                dados.nome ||
-                "Meu Jogo Roblox"
-              )}
+              🎮 ${
+                escapeHtml(
+                  dados.game_name ||
+                  "Meu Jogo Roblox"
+                )
+              }
             </h2>
 
             <p>
-              ${escapeHtml(
-                dados.description ||
-                dados.descricao ||
-                "Projeto criado pela IA."
-              )}
+              ${
+                escapeHtml(
+                  dados.description ||
+                  "Projeto criado pela IA."
+                )
+              }
             </p>
 
             <button
               id="downloadButton"
               class="download-button"
             >
-              📥 BAIXAR PROJETO
+              📥 BAIXAR PROJETO ROBLOX
             </button>
+
         `;
 
+
         if (dados.map) {
+
           html += `
+
             <div class="info">
-              🗺️ <strong>Mapa</strong><br>
-              ${escapeHtml(
-                typeof dados.map === "string"
-                  ? dados.map
-                  : dados.map.description || ""
-              )}
+
+              🗺️ <strong>Mapa</strong>
+
+              <br><br>
+
+              ${
+                escapeHtml(
+                  typeof dados.map === "string"
+                    ? dados.map
+                    : dados.map.description || ""
+                )
+              }
+
             </div>
+
           `;
+
         }
 
+
         if (Array.isArray(dados.systems)) {
+
           html += `
+
             <div class="info">
-              ⚙️ <strong>Sistemas</strong><br>
-              ${dados.systems.map(s =>
-                escapeHtml(
-                  typeof s === "string"
-                    ? s
-                    : s.name || ""
-                )
-              ).join("<br>")}
+
+              ⚙️ <strong>Sistemas</strong>
+
+              <br><br>
+
+              ${
+                dados.systems
+                  .map(s =>
+                    escapeHtml(
+                      typeof s === "string"
+                        ? s
+                        : s.name || ""
+                    )
+                  )
+                  .join("<br>")
+              }
+
             </div>
+
           `;
+
         }
+
 
         if (Array.isArray(dados.scripts)) {
 
-          dados.scripts.forEach((script) => {
+          dados.scripts.forEach(script => {
 
             html += `
+
               <div class="script-card">
 
                 <h3>
-                  📜 ${escapeHtml(
-                    script.name ||
-                    "Script"
-                  )}
+                  📜 ${
+                    escapeHtml(
+                      script.name ||
+                      "Script"
+                    )
+                  }
                 </h3>
 
                 <div class="location">
+
                   📁 Local:
-                  ${escapeHtml(
-                    script.location ||
-                    "ServerScriptService"
-                  )}
+                  ${
+                    escapeHtml(
+                      script.location ||
+                      "ServerScriptService"
+                    )
+                  }
+
                 </div>
 
-                <pre>${escapeHtml(
-                  script.code || ""
-                )}</pre>
+                <pre>${
+                  escapeHtml(
+                    script.code || ""
+                  )
+                }</pre>
 
               </div>
+
             `;
 
           });
 
         }
 
+
         html += `
           </div>
         `;
 
+
         result.innerHTML = html;
+
 
         document
           .getElementById("downloadButton")
@@ -600,6 +410,7 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
             "click",
             baixarProjeto
           );
+
 
       } catch (erro) {
 
@@ -614,6 +425,7 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
 
         button.textContent =
           "🚀 CRIAR MEU JOGO";
+
       }
 
     });
@@ -622,35 +434,48 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
     function baixarProjeto() {
 
       if (!projetoAtual) {
-        alert("Crie um projeto primeiro.");
-        return;
-      }
 
-      const conteudo =
-        JSON.stringify(
-          projetoAtual,
-          null,
-          2
+        alert(
+          "Crie um projeto primeiro."
         );
 
-      const arquivo =
+        return;
+
+      }
+
+
+      const rbxlx =
+        criarArquivoRoblox(
+          projetoAtual
+        );
+
+
+      const blob =
         new Blob(
-          [conteudo],
+          [rbxlx],
           {
-            type: "application/json"
+            type:
+              "application/xml"
           }
         );
 
+
       const url =
-        URL.createObjectURL(arquivo);
+        URL.createObjectURL(blob);
+
 
       const link =
         document.createElement("a");
 
+
       link.href = url;
 
       link.download =
-        "projeto-roblox.json";
+        nomeArquivo(
+          projetoAtual.game_name ||
+          "MeuJogo"
+        ) + ".rbxlx";
+
 
       document.body.appendChild(link);
 
@@ -659,18 +484,259 @@ Crie um jogo de sobrevivência em uma ilha. Os jogadores precisam coletar madeir
       link.remove();
 
       URL.revokeObjectURL(url);
+
+    }
+
+
+    function criarArquivoRoblox(projeto) {
+
+      let scripts = "";
+
+
+      if (
+        Array.isArray(
+          projeto.scripts
+        )
+      ) {
+
+        projeto.scripts.forEach(
+          script => {
+
+            const nome =
+              escapeXml(
+                script.name ||
+                "Script"
+              );
+
+
+            const codigo =
+              escapeXml(
+                script.code ||
+                ""
+              );
+
+
+            scripts += `
+
+              <Item
+                class="Script"
+                referent="RBX_SCRIPT_${Math.random()
+                  .toString(36)
+                  .substring(2)}"
+              >
+
+                <Properties>
+
+                  <string
+                    name="Name"
+                  >
+                    ${nome}
+                  </string>
+
+                  <ProtectedString
+                    name="Source"
+                  >
+                    ${codigo}
+                  </ProtectedString>
+
+                </Properties>
+
+              </Item>
+
+            `;
+
+          }
+        );
+
+      }
+
+
+      return `<?xml version="1.0" encoding="utf-8"?>
+
+<roblox
+  version="4"
+  studio_place_id="0"
+  xmlns:xmime="http://www.w3.org/2001/XMLSchema-instance"
+  xmime:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd"
+>
+
+  <External>null</External>
+
+  <External>nil</External>
+
+
+  <Item
+    class="Workspace"
+    referent="RBX_WORKSPACE"
+  >
+
+    <Properties>
+
+      <string name="Name">
+        Workspace
+      </string>
+
+    </Properties>
+
+  </Item>
+
+
+  <Item
+    class="ServerScriptService"
+    referent="RBX_SERVER_SCRIPT_SERVICE"
+  >
+
+    <Properties>
+
+      <string name="Name">
+        ServerScriptService
+      </string>
+
+    </Properties>
+
+    ${scripts}
+
+  </Item>
+
+
+  <Item
+    class="ReplicatedStorage"
+    referent="RBX_REPLICATED_STORAGE"
+  >
+
+    <Properties>
+
+      <string name="Name">
+        ReplicatedStorage
+      </string>
+
+    </Properties>
+
+  </Item>
+
+
+  <Item
+    class="StarterGui"
+    referent="RBX_STARTER_GUI"
+  >
+
+    <Properties>
+
+      <string name="Name">
+        StarterGui
+      </string>
+
+    </Properties>
+
+  </Item>
+
+
+  <Item
+    class="StarterPlayer"
+    referent="RBX_STARTER_PLAYER"
+  >
+
+    <Properties>
+
+      <string name="Name">
+        StarterPlayer
+      </string>
+
+    </Properties>
+
+  </Item>
+
+
+</roblox>`;
+
+    }
+
+
+    function escapeXml(text) {
+
+      return String(text)
+
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+
+        .replace(
+          /</g,
+          "&lt;"
+        )
+
+        .replace(
+          />/g,
+          "&gt;"
+        )
+
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+
+        .replace(
+          /'/g,
+          "&apos;"
+        );
+
     }
 
 
     function escapeHtml(text) {
 
       return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+
+        .replace(
+          /</g,
+          "&lt;"
+        )
+
+        .replace(
+          />/g,
+          "&gt;"
+        )
+
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+
     }
+
+
+    function nomeArquivo(nome) {
+
+      return String(nome)
+
+        .replace(
+          /[<>:"/\\|?*]/g,
+          ""
+        )
+
+        .replace(
+          /\s+/g,
+          "_"
+        )
+
+        .slice(
+          0,
+          80
+        );
+
+    }
+
   </script>
 
 </body>
