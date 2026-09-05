@@ -32,9 +32,10 @@ REGRAS:
 - Não use Markdown.
 - Não coloque texto fora do JSON.
 - Não use blocos de código.
-- Gere scripts Luau completos.
+- Gere scripts Luau completos e funcionais.
 - Use somente APIs reais do Roblox.
 - Informe onde cada script deve ser colocado.
+- Não invente APIs inexistentes.
 
 A resposta deve seguir exatamente esta estrutura:
 
@@ -43,8 +44,9 @@ A resposta deve seguir exatamente esta estrutura:
   "description": "Descrição do jogo",
   "genre": "Gênero",
   "objective": "Objetivo principal",
+
   "map": {
-    "description": "Descrição do mapa",
+    "description": "Descrição completa do mapa",
     "areas": [
       {
         "name": "Nome da área",
@@ -52,6 +54,7 @@ A resposta deve seguir exatamente esta estrutura:
       }
     ]
   },
+
   "objects": [
     {
       "name": "Nome do objeto",
@@ -60,6 +63,7 @@ A resposta deve seguir exatamente esta estrutura:
       "location": "Workspace"
     }
   ],
+
   "npcs": [
     {
       "name": "Nome do NPC",
@@ -69,12 +73,14 @@ A resposta deve seguir exatamente esta estrutura:
       "description": "Comportamento"
     }
   ],
+
   "systems": [
     {
       "name": "Nome do sistema",
       "description": "Como funciona"
     }
   ],
+
   "scripts": [
     {
       "name": "Nome do script",
@@ -84,6 +90,7 @@ A resposta deve seguir exatamente esta estrutura:
       "code": "CÓDIGO LUA COMPLETO"
     }
   ],
+
   "steps": [
     "Passo 1",
     "Passo 2",
@@ -96,85 +103,167 @@ IDEIA DO USUÁRIO:
 ${ideia.trim().slice(0, 5000)}
 `;
 
-    console.log("Iniciando Gemini...");
+    // Modelos para tentar.
+    // Se o primeiro estiver temporariamente sobrecarregado,
+    // tentamos o próximo.
+    const modelos = [
+      "gemini-3.6-flash",
+      "gemini-3.6-flash-lite"
+    ];
 
-    const resposta = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
-        },
-        body: JSON.stringify({
-          contents: [
+    let ultimoErro = null;
+
+    for (const modelo of modelos) {
+      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        try {
+          console.log(
+            `Tentando Gemini: ${modelo} | tentativa ${tentativa}`
+          );
+
+          const resposta = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
             {
-              parts: [
-                {
-                  text: prompt
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: prompt
+                      }
+                    ]
+                  }
+                ],
+                generationConfig: {
+                  responseMimeType: "application/json"
                 }
-              ]
+              })
             }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 20000,
-            responseMimeType: "application/json"
+          );
+
+          const dados = await resposta.json();
+
+          console.log(
+            `Gemini ${modelo} respondeu com status ${resposta.status}`
+          );
+
+          // Se deu certo
+          if (resposta.ok) {
+            const texto =
+              dados?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!texto) {
+              ultimoErro =
+                "A Gemini não retornou conteúdo.";
+
+              continue;
+            }
+
+            let projeto;
+
+            try {
+              projeto = JSON.parse(texto);
+            } catch (erro) {
+              console.error(
+                "JSON retornado pela Gemini:",
+                texto
+              );
+
+              ultimoErro =
+                "A Gemini retornou um JSON inválido.";
+
+              continue;
+            }
+
+            console.log(
+              "Projeto criado com sucesso!"
+            );
+
+            return res.status(200).json(projeto);
           }
-        })
+
+          const mensagem =
+            dados?.error?.message ||
+            "Erro desconhecido na Gemini.";
+
+          ultimoErro = mensagem;
+
+          console.error(
+            `Erro Gemini ${modelo}:`,
+            mensagem
+          );
+
+          // Erros que não adianta repetir
+          if (
+            resposta.status === 400 ||
+            resposta.status === 401 ||
+            resposta.status === 403
+          ) {
+            return res.status(500).json({
+              error: "Erro na configuração da Gemini.",
+              details: mensagem
+            });
+          }
+
+          // Se for erro temporário, espera e tenta novamente
+          if (
+            resposta.status === 429 ||
+            resposta.status === 500 ||
+            resposta.status === 502 ||
+            resposta.status === 503 ||
+            resposta.status === 504 ||
+            mensagem.toLowerCase().includes("high demand") ||
+            mensagem.toLowerCase().includes("overloaded") ||
+            mensagem.toLowerCase().includes("temporarily")
+          ) {
+            const espera = tentativa * 2000;
+
+            console.log(
+              `Servidor ocupado. Esperando ${espera}ms...`
+            );
+
+            await new Promise(resolve =>
+              setTimeout(resolve, espera)
+            );
+
+            continue;
+          }
+
+          // Modelo não disponível:
+          // pula para o próximo modelo
+          if (resposta.status === 404) {
+            break;
+          }
+
+          break;
+
+        } catch (erro) {
+          console.error(
+            "Erro na tentativa:",
+            erro
+          );
+
+          ultimoErro = erro.message;
+
+          // Pequena espera antes de tentar novamente
+          await new Promise(resolve =>
+            setTimeout(resolve, tentativa * 2000)
+          );
+        }
       }
-    );
-
-    console.log("Status Gemini:", resposta.status);
-
-    const dados = await resposta.json();
-
-    if (!resposta.ok) {
-      console.error(
-        "GEMINI_ERRO:",
-        JSON.stringify(dados)
-      );
-
-      return res.status(500).json({
-        error: "Erro na API Gemini.",
-        details:
-          dados?.error?.message ||
-          "Erro desconhecido na Gemini."
-      });
     }
 
-    const texto =
-      dados?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!texto) {
-      console.error(
-        "GEMINI_SEM_RESPOSTA:",
-        JSON.stringify(dados)
-      );
-
-      return res.status(500).json({
-        error: "A Gemini não retornou conteúdo."
-      });
-    }
-
-    let projeto;
-
-    try {
-      projeto = JSON.parse(texto);
-    } catch (erro) {
-      console.error(
-        "JSON_INVALIDO:",
-        texto
-      );
-
-      return res.status(500).json({
-        error: "A Gemini retornou um JSON inválido."
-      });
-    }
-
-    console.log("Projeto criado com sucesso!");
-
-    return res.status(200).json(projeto);
+    return res.status(503).json({
+      error:
+        "A IA está temporariamente ocupada.",
+      details:
+        ultimoErro ||
+        "Tente novamente em alguns segundos."
+    });
 
   } catch (erro) {
     console.error(
