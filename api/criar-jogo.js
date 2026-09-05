@@ -1,9 +1,6 @@
-  module.exports = async function handler(req, res) {
-  // Apenas POST
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Use POST."
-    });
+    return res.status(405).json({ error: "Use POST." });
   }
 
   try {
@@ -19,63 +16,94 @@
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY não configurada no Vercel."
+        error: "GEMINI_API_KEY não configurada."
       });
     }
 
     const prompt = `
-Você é uma IA especializada em criar projetos de jogos Roblox.
+Você é um desenvolvedor profissional de Roblox Studio especializado em Luau.
 
-Crie um projeto de jogo baseado na ideia do usuário.
+O usuário vai fornecer uma ideia de jogo.
+Transforme essa ideia em um projeto detalhado que possa ser montado no Roblox Studio.
 
-A resposta DEVE ser somente JSON válido.
-Não use markdown.
-Não coloque \`\`\`json.
-Não escreva explicações fora do JSON.
+IMPORTANTE:
+- Responda SOMENTE JSON válido.
+- Não use markdown.
+- Não use ```json.
+- Não coloque texto fora do JSON.
+- Gere scripts Luau completos e funcionais.
+- Organize cada script pelo local onde deve ser colocado.
+- Não invente APIs inexistentes do Roblox.
 
-Use exatamente esta estrutura:
+Estrutura obrigatória:
 
 {
   "nome": "Nome do jogo",
-  "descricao": "Descrição do jogo",
-  "genero": "Gênero do jogo",
+  "descricao": "Descrição completa",
+  "genero": "Gênero",
+  "objetivo": "Objetivo principal do jogador",
+
   "mapa": {
-    "descricao": "Descrição detalhada do mapa",
+    "descricao": "Descrição geral do mapa",
     "areas": [
-      "Área 1",
-      "Área 2",
-      "Área 3"
+      {
+        "nome": "Nome da área",
+        "descricao": "Descrição",
+        "posicao": "Descrição aproximada da posição"
+      }
     ]
   },
+
+  "objetos": [
+    {
+      "nome": "Nome",
+      "tipo": "Part/NPC/Model/etc",
+      "descricao": "Descrição",
+      "local": "Workspace"
+    }
+  ],
+
+  "npc": [
+    {
+      "nome": "Nome do NPC",
+      "tipo": "Inimigo/Animal/NPC",
+      "vida": 100,
+      "dano": 10,
+      "descricao": "Comportamento do NPC"
+    }
+  ],
+
   "sistemas": [
     {
       "nome": "Nome do sistema",
       "descricao": "Como funciona"
     }
   ],
-  "objetos": [
-    {
-      "nome": "Nome do objeto",
-      "descricao": "Descrição"
-    }
-  ],
+
   "scripts": [
     {
       "nome": "Nome do script",
       "local": "ServerScriptService",
-      "codigo": "Código Lua completo"
+      "tipo": "Script",
+      "descricao": "O que o script faz",
+      "codigo": "CÓDIGO LUA COMPLETO"
     }
+  ],
+
+  "passos": [
+    "Passo 1 para montar o jogo",
+    "Passo 2 para montar o jogo",
+    "Passo 3 para montar o jogo"
   ]
 }
 
-Crie scripts Lua funcionais sempre que possível.
+A ideia do usuário é:
 
-IDEIA DO USUÁRIO:
 ${ideia.trim().slice(0, 5000)}
 `;
 
     const resposta = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -83,16 +111,8 @@ ${ideia.trim().slice(0, 5000)}
           "x-goog-api-key": apiKey
         },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text: "Você é um especialista em desenvolvimento de jogos Roblox e programação Lua."
-              }
-            ]
-          },
           contents: [
             {
-              role: "user",
               parts: [
                 {
                   text: prompt
@@ -102,7 +122,7 @@ ${ideia.trim().slice(0, 5000)}
           ],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 12000,
+            maxOutputTokens: 20000,
             responseMimeType: "application/json"
           }
         })
@@ -116,9 +136,7 @@ ${ideia.trim().slice(0, 5000)}
 
       return res.status(500).json({
         error: "Erro na API Gemini.",
-        details:
-          dados?.error?.message ||
-          "Erro desconhecido na API Gemini."
+        details: dados?.error?.message || "Erro desconhecido."
       });
     }
 
@@ -126,8 +144,6 @@ ${ideia.trim().slice(0, 5000)}
       dados?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!texto) {
-      console.error("Resposta Gemini sem texto:", dados);
-
       return res.status(500).json({
         error: "A Gemini não retornou conteúdo."
       });
@@ -137,29 +153,19 @@ ${ideia.trim().slice(0, 5000)}
 
     try {
       projeto = JSON.parse(texto);
-    } catch (erroJson) {
-      console.error("JSON inválido recebido da Gemini:", texto);
-
-      // Tenta encontrar um JSON dentro da resposta
+    } catch {
       const inicio = texto.indexOf("{");
       const fim = texto.lastIndexOf("}");
 
       if (inicio === -1 || fim === -1) {
         return res.status(500).json({
-          error: "A IA retornou um formato inválido.",
-          details: texto.substring(0, 500)
+          error: "A IA retornou um formato inválido."
         });
       }
 
-      try {
-        projeto = JSON.parse(
-          texto.substring(inicio, fim + 1)
-        );
-      } catch (erroFinal) {
-        return res.status(500).json({
-          error: "Não foi possível interpretar o projeto gerado."
-        });
-      }
+      projeto = JSON.parse(
+        texto.substring(inicio, fim + 1)
+      );
     }
 
     return res.status(200).json(projeto);
@@ -172,4 +178,4 @@ ${ideia.trim().slice(0, 5000)}
       details: erro.message
     });
   }
-};
+}; 
