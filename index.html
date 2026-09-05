@@ -2,1355 +2,1496 @@
 <html lang="pt-BR">
 
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1.0">
-
-<title>Roblox AI Studio V4</title>
-
-<style>
-
-*{
-box-sizing:border-box;
-margin:0;
-padding:0;
-}
-
-body{
-font-family:Arial,sans-serif;
-background:#090b10;
-color:white;
-min-height:100vh;
-}
-
-button,textarea{
-font:inherit;
-}
-
-.header{
-background:#11151d;
-border-bottom:1px solid #292f3c;
-padding:10px;
-display:flex;
-align-items:center;
-gap:12px;
-position:sticky;
-top:0;
-z-index:20;
-flex-wrap:wrap;
-}
-
-.logo{
-font-size:20px;
-font-weight:900;
-}
-
-.logo span{
-color:#795cff;
-}
-
-.toolbar{
-display:flex;
-gap:7px;
-overflow-x:auto;
-}
-
-button{
-border:0;
-border-radius:8px;
-padding:10px 13px;
-background:#202633;
-color:white;
-font-weight:700;
-cursor:pointer;
-}
-
-button:hover{
-background:#30394b;
-}
-
-.primary{
-background:#7055ff;
-}
-
-.primary:hover{
-background:#846dff;
-}
-
-.layout{
-display:grid;
-grid-template-columns:220px 1fr 250px;
-min-height:calc(100vh - 70px);
-}
-
-.panel{
-background:#11151d;
-padding:14px;
-border-right:1px solid #292f3c;
-}
-
-.right{
-border-right:0;
-border-left:1px solid #292f3c;
-}
-
-.title{
-font-size:12px;
-font-weight:900;
-color:#929caf;
-margin-bottom:12px;
-text-transform:uppercase;
-}
-
-.tree{
-display:flex;
-flex-direction:column;
-gap:7px;
-}
-
-.tree div{
-background:#181d27;
-padding:9px;
-border-radius:7px;
-font-size:13px;
-}
-
-.main{
-padding:18px;
-overflow:auto;
-}
-
-.hero{
-background:#141923;
-border:1px solid #292f3c;
-border-radius:14px;
-padding:20px;
-}
-
-.hero h1{
-font-size:28px;
-margin-bottom:8px;
-}
-
-.muted{
-color:#99a3b5;
-line-height:1.5;
-}
-
-textarea{
-width:100%;
-min-height:150px;
-margin-top:16px;
-padding:14px;
-background:#090c12;
-border:1px solid #343c4c;
-border-radius:10px;
-color:white;
-resize:vertical;
-outline:none;
-}
-
-textarea:focus{
-border-color:#765cff;
-}
-
-.actions{
-display:flex;
-gap:8px;
-flex-wrap:wrap;
-margin-top:10px;
-}
-
-.quick{
-display:flex;
-gap:7px;
-overflow:auto;
-margin-top:10px;
-}
-
-.quick button{
-font-size:12px;
-white-space:nowrap;
-}
-
-.status{
-margin-top:12px;
-color:#9ca6b8;
-}
-
-.loading{
-display:none;
-margin-top:15px;
-}
-
-.loading.active{
-display:block;
-}
-
-.progress{
-height:7px;
-background:#242b38;
-border-radius:20px;
-overflow:hidden;
-}
-
-.progress div{
-height:100%;
-width:40%;
-background:#765cff;
-animation:load 1s infinite alternate;
-}
-
-@keyframes load{
-from{transform:translateX(-100%)}
-to{transform:translateX(250%)}
-}
-
-.result{
-display:none;
-margin-top:15px;
-}
-
-.result.active{
-display:block;
-}
-
-.game{
-background:#141923;
-border:1px solid #292f3c;
-border-radius:12px;
-padding:17px;
-margin-bottom:12px;
-}
-
-.cards{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:12px;
-}
-
-.card{
-background:#11151d;
-border:1px solid #292f3c;
-border-radius:12px;
-padding:15px;
-}
-
-.card h3{
-color:#b8adff;
-margin-bottom:10px;
-}
-
-.list{
-display:flex;
-flex-direction:column;
-gap:7px;
-}
-
-.item{
-background:#181d27;
-border-radius:8px;
-padding:10px;
-font-size:13px;
-line-height:1.5;
-}
-
-.code{
-background:#080a0f;
-border:1px solid #292f3c;
-border-radius:8px;
-overflow:hidden;
-}
-
-.code-title{
-padding:9px;
-background:#181d27;
-font-size:12px;
-color:#9da7b9;
-}
-
-pre{
-padding:12px;
-font-size:11px;
-white-space:pre-wrap;
-word-break:break-word;
-max-height:450px;
-overflow:auto;
-font-family:monospace;
-}
-
-.stat{
-display:flex;
-justify-content:space-between;
-background:#181d27;
-padding:10px;
-border-radius:8px;
-margin-bottom:7px;
-font-size:13px;
-}
-
-.badge{
-display:inline-block;
-padding:5px 8px;
-background:#241e45;
-color:#b9adff;
-border-radius:20px;
-font-size:11px;
-margin-top:8px;
-}
-
-@media(max-width:1000px){
-
-.layout{
-grid-template-columns:190px 1fr;
-}
-
-.right{
-display:none;
-}
-
-}
-
-@media(max-width:700px){
-
-.header{
-align-items:flex-start;
-}
-
-.toolbar{
-width:100%;
-}
-
-.left{
-display:none;
-}
-
-.layout{
-display:block;
-}
-
-.main{
-padding:10px;
-}
-
-.hero{
-padding:14px;
-}
-
-.hero h1{
-font-size:23px;
-}
-
-.cards{
-grid-template-columns:1fr;
-}
-
-.actions{
-display:grid;
-grid-template-columns:1fr 1fr;
-}
-
-.actions button{
-width:100%;
-}
-
-}
-
-</style>
+  <title>Roblox AI Studio</title>
 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #070b12;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    button,
+    textarea,
+    input {
+      font-family: inherit;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+
+      display: flex;
+      gap: 8px;
+      align-items: center;
+
+      padding: 10px;
+
+      background: #0d131e;
+      border-bottom: 1px solid #1d2938;
+
+      overflow-x: auto;
+    }
+
+    .topbar button {
+      flex-shrink: 0;
+
+      border: 1px solid #29384d;
+      background: #111a27;
+      color: white;
+
+      padding: 10px 13px;
+      border-radius: 10px;
+
+      cursor: pointer;
+    }
+
+    .topbar button:hover {
+      background: #182537;
+    }
+
+    .container {
+      width: min(1100px, 100%);
+      margin: auto;
+      padding: 18px;
+    }
+
+    .hero {
+      padding: 25px 5px 15px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    .hero p {
+      color: #aab7c8;
+      line-height: 1.5;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 145px;
+
+      resize: vertical;
+
+      padding: 15px;
+
+      border-radius: 14px;
+      border: 1px solid #29384d;
+
+      background: #0c131d;
+      color: white;
+
+      outline: none;
+
+      font-size: 15px;
+    }
+
+    textarea:focus {
+      border-color: #667eea;
+    }
+
+    .main-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+
+      margin-top: 12px;
+    }
+
+    .main-buttons button {
+      min-height: 50px;
+
+      border: none;
+      border-radius: 12px;
+
+      background: #667eea;
+      color: white;
+
+      font-size: 15px;
+      font-weight: bold;
+
+      cursor: pointer;
+    }
+
+    .main-buttons button:nth-child(2) {
+      background: #1d8f68;
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+
+      margin-top: 15px;
+    }
+
+    .preset {
+      border: 1px solid #29384d;
+      background: #101925;
+      color: white;
+
+      border-radius: 10px;
+      padding: 11px 8px;
+
+      cursor: pointer;
+    }
+
+    .section-title {
+      margin-top: 25px;
+      margin-bottom: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+    }
+
+    .action {
+      border: 1px solid #29384d;
+      background: #101925;
+      color: white;
+
+      border-radius: 11px;
+      padding: 12px;
+
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .action:hover {
+      background: #182537;
+    }
+
+    .explorer {
+      margin-top: 20px;
+
+      border: 1px solid #202d3e;
+      border-radius: 14px;
+
+      background: #0b111a;
+
+      overflow: hidden;
+    }
+
+    .explorer-header {
+      padding: 13px;
+      background: #101925;
+      border-bottom: 1px solid #202d3e;
+
+      font-weight: bold;
+    }
+
+    .tree {
+      padding: 12px;
+      color: #c7d2df;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .tree div {
+      padding-left: 10px;
+    }
+
+    .status {
+      margin-top: 14px;
+
+      padding: 12px;
+
+      border-radius: 10px;
+
+      background: #0e1723;
+      border: 1px solid #1f2d3d;
+
+      color: #aebbd0;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+
+      margin-top: 15px;
+    }
+
+    .card {
+      background: #0d151f;
+
+      border: 1px solid #202d3e;
+
+      border-radius: 14px;
+
+      padding: 15px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .card p {
+      color: #aebbd0;
+      line-height: 1.5;
+    }
+
+    .list {
+      padding-left: 20px;
+      color: #c7d2df;
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+
+      margin-top: 15px;
+    }
+
+    .download {
+      border: none;
+      border-radius: 10px;
+
+      padding: 12px;
+
+      background: #667eea;
+      color: white;
+
+      font-weight: bold;
+
+      cursor: pointer;
+    }
+
+    .counter {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+
+      margin-top: 15px;
+    }
+
+    .counter-box {
+      background: #0d151f;
+      border: 1px solid #202d3e;
+
+      padding: 12px;
+      border-radius: 10px;
+
+      text-align: center;
+    }
+
+    .counter-box strong {
+      display: block;
+      font-size: 21px;
+    }
+
+    .danger {
+      background: #32171b !important;
+      border-color: #61252d !important;
+    }
+
+    @media(max-width: 650px) {
+      .main-buttons,
+      .cards,
+      .download-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .presets {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .counter {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 25px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header class="header">
+  <div class="topbar">
 
-<div class="logo">
-Roblox <span>AI Studio</span>
-</div>
+    <button onclick="novo()">
+      🆕 Novo
+    </button>
 
-<div class="toolbar">
+    <button onclick="gerar()">
+      🤖 Gerar
+    </button>
 
-<button onclick="novo()">
-🆕 Novo
-</button>
+    <button onclick="downloadBuilder()">
+      🧱 Builder
+    </button>
 
-<button
-class="primary"
-onclick="gerar()">
-🤖 Gerar
-</button>
+    <button onclick="downloadScripts()">
+      📜 Scripts
+    </button>
 
-<button onclick="downloadBuilder()">
-🧱 Builder
-</button>
+    <button onclick="downloadRBXLX()">
+      📦 RBXLX
+    </button>
 
-<button onclick="downloadScripts()">
-📜 Scripts
-</button>
+    <button onclick="expandir()">
+      🧠 Expandir
+    </button>
 
-<button onclick="downloadRBXLX()">
-📦 RBXLX
-</button>
+    <button onclick="limpar()">
+      🗑️ Limpar
+    </button>
 
-<button onclick="expandir()">
-🧠 Expandir
-</button>
+  </div>
 
-</div>
+  <main class="container">
 
-</header>
+    <section class="hero">
 
+      <h1>
+        🚀 Roblox AI Studio
+      </h1>
 
-<div class="layout">
+      <p>
+        Crie jogos completos usando inteligência artificial.
+        Mapa, objetos, NPCs, sistemas, missões, pets,
+        itens, remotes e Builder automático.
+      </p>
 
+    </section>
 
-<aside class="panel left">
+    <textarea
+      id="ideia"
+      placeholder="Descreva seu jogo aqui...">Crie um jogo de sobrevivência em uma ilha com monstros, armas, casas e sistema de moedas.</textarea>
 
-<div class="title">
-Explorer
-</div>
+    <div class="main-buttons">
 
-<div class="tree">
+      <button onclick="gerar()">
+        🚀 CRIAR JOGO COMPLETO
+      </button>
 
-<div>📁 Workspace</div>
-<div>　📁 GeneratedMap</div>
-<div>　　📁 Areas</div>
-<div>　　📁 Objects</div>
-<div>　　📁 NPCs</div>
-<div>　　📁 Spawns</div>
+      <button onclick="adicionarSistema()">
+        🧠 ADICIONAR SISTEMA
+      </button>
 
-<div>📁 ReplicatedStorage</div>
-<div>　📁 RobloxAI</div>
-<div>　　📁 Remotes</div>
+    </div>
 
-<div>📁 ServerScriptService</div>
-<div>　📁 RobloxAI</div>
+    <div class="presets">
 
-<div>📁 ServerStorage</div>
+      <button class="preset"
+              onclick="preset('sobrevivencia')">
+        🧟 Sobrevivência
+      </button>
 
-<div>📁 StarterGui</div>
+      <button class="preset"
+              onclick="preset('simulator')">
+        💰 Simulator
+      </button>
 
-<div>📁 StarterPlayer</div>
+      <button class="preset"
+              onclick="preset('rpg')">
+        ⚔️ RPG
+      </button>
 
-</div>
+      <button class="preset"
+              onclick="preset('obby')">
+        🏃 Obby
+      </button>
 
-</aside>
+      <button class="preset"
+              onclick="preset('aventura')">
+        🗺️ Aventura
+      </button>
 
+      <button class="preset"
+              onclick="preset('pets')">
+        🐾 Pets
+      </button>
 
-<main class="main">
+    </div>
 
-<section class="hero">
+    <h2 class="section-title">
+      ⚡ Ações rápidas
+    </h2>
 
-<h1>
-🚀 Roblox AI Studio
-</h1>
+    <div class="actions">
 
-<p class="muted">
-Crie jogos completos usando inteligência artificial.
-Mapa, objetos, NPCs, sistemas, missões, pets,
-itens, remotes e Builder automático.
-</p>
+      <button class="action"
+              onclick="executarAcao('adicionar_combate')">
+        ⚔️ Adicionar sistema de combate
+      </button>
 
+      <button class="action"
+              onclick="executarAcao('adicionar_pets')">
+        🐾 Adicionar sistema de pets
+      </button>
 
-<textarea
-id="ideia"
-placeholder="Exemplo: Crie um jogo de sobrevivência em uma ilha com zumbis, moedas, loja, pets, missões, XP, níveis e um boss gigante."
-></textarea>
+      <button class="action"
+              onclick="executarAcao('adicionar_loja')">
+        🛒 Adicionar loja
+      </button>
 
+      <button class="action"
+              onclick="executarAcao('adicionar_missoes')">
+        📜 Adicionar missões
+      </button>
 
-<div class="quick">
+      <button class="action"
+              onclick="executarAcao('adicionar_economia')">
+        💰 Adicionar economia/moedas
+      </button>
 
-<button onclick="preset('sobrevivência')">
-🧟 Sobrevivência
-</button>
+      <button class="action"
+              onclick="executarAcao('adicionar_npcs')">
+        👾 Adicionar NPCs
+      </button>
 
-<button onclick="preset('simulator')">
-💰 Simulator
-</button>
+      <button class="action"
+              onclick="executarAcao('melhorar_mapa')">
+        🗺️ Melhorar mapa
+      </button>
 
-<button onclick="preset('RPG')">
-⚔️ RPG
-</button>
+      <button class="action"
+              onclick="executarAcao('corrigir_scripts')">
+        🔧 Corrigir scripts
+      </button>
 
-<button onclick="preset('obby')">
-🏃 Obby
-</button>
+    </div>
 
-<button onclick="preset('aventura')">
-🗺️ Aventura
-</button>
+    <div id="status"
+         class="status">
+      Pronto para criar seu jogo.
+    </div>
 
-<button onclick="preset('pets')">
-🐾 Pets
-</button>
+    <div id="contadores"
+         class="counter"
+         style="display:none;">
 
-</div>
+      <div class="counter-box">
+        <strong id="cAreas">0</strong>
+        Áreas
+      </div>
 
+      <div class="counter-box">
+        <strong id="cObjects">0</strong>
+        Objetos
+      </div>
 
-<div class="actions">
+      <div class="counter-box">
+        <strong id="cNpcs">0</strong>
+        NPCs
+      </div>
 
-<button
-class="primary"
-onclick="gerar()">
-🚀 CRIAR JOGO COMPLETO
-</button>
+      <div class="counter-box">
+        <strong id="cSystems">0</strong>
+        Sistemas
+      </div>
 
-<button onclick="expandir()">
-🧠 ADICIONAR SISTEMA
-</button>
+    </div>
 
-</div>
+    <section class="explorer">
 
+      <div class="explorer-header">
+        📁 Explorer
+      </div>
 
-<div
-id="status"
-class="status">
-Pronto para criar.
-</div>
+      <div id="tree"
+           class="tree">
 
+        <div>📦 Workspace</div>
+        <div>📦 ReplicatedStorage</div>
+        <div>📦 ServerScriptService</div>
+        <div>💡 Gere um projeto para preencher o Explorer.</div>
 
-<div
-id="loading"
-class="loading">
+      </div>
 
-<div class="progress">
-<div></div>
-</div>
+    </section>
 
-<p class="status">
-A IA está criando seu projeto...
-</p>
+    <div id="resultado"
+         class="cards">
+    </div>
 
-</div>
-
-</section>
-
-
-<section
-id="result"
-class="result">
-
-<div
-id="game"
-class="game">
-</div>
-
-<div
-id="cards"
-class="cards">
-</div>
-
-</section>
-
-</main>
-
-
-<aside class="panel right">
-
-<div class="title">
-Properties
-</div>
-
-<div class="stat">
-<span>Objetos</span>
-<b id="objects">0</b>
-</div>
-
-<div class="stat">
-<span>NPCs</span>
-<b id="npcs">0</b>
-</div>
-
-<div class="stat">
-<span>Áreas</span>
-<b id="areas">0</b>
-</div>
-
-<div class="stat">
-<span>Sistemas</span>
-<b id="systems">0</b>
-</div>
-
-<div class="stat">
-<span>Missões</span>
-<b id="quests">0</b>
-</div>
-
-<div class="stat">
-<span>Itens</span>
-<b id="items">0</b>
-</div>
-
-<div class="stat">
-<span>Pets</span>
-<b id="pets">0</b>
-</div>
-
-<div class="stat">
-<span>Remotes</span>
-<b id="remotes">0</b>
-</div>
-
-<div class="stat">
-<span>Scripts</span>
-<b id="scripts">0</b>
-</div>
-
-</aside>
-
-</div>
-
+  </main>
 
 <script>
 
 let projeto = null;
 
+const ideiaEl =
+  document.getElementById("ideia");
 
-function esc(value){
+const statusEl =
+  document.getElementById("status");
 
-return String(value ?? "")
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;")
-.replace(/"/g,"&quot;")
-.replace(/'/g,"&#039;");
+const resultadoEl =
+  document.getElementById("resultado");
+
+function status(texto) {
+  statusEl.textContent = texto;
+}
+
+function preset(tipo) {
+
+  const ideias = {
+
+    sobrevivencia:
+      "Crie um jogo de sobrevivência em uma ilha com monstros, casas, armas, coleta de recursos, fome, vida, moedas e eventos.",
+
+    simulator:
+      "Crie um simulator onde o jogador coleta recursos, vende recursos, ganha moedas, compra upgrades, desbloqueia áreas e evolui.",
+
+    rpg:
+      "Crie um RPG com mapa grande, NPCs, inimigos, chefes, quests, armas, níveis, XP, inventário, lojas e habilidades.",
+
+    obby:
+      "Crie um obby completo com fases, checkpoints, moedas, obstáculos, áreas secretas, recompensas e sistema de progressão.",
+
+    aventura:
+      "Crie um jogo de aventura com ilhas, cavernas, NPCs, quests, tesouros, inimigos, bosses e exploração.",
+
+    pets:
+      "Crie um jogo de pets com ovos, raridades, pets com habilidades, inventário, moedas, áreas desbloqueáveis e upgrades."
+
+  };
+
+  ideiaEl.value =
+    ideias[tipo] ||
+    ideias.aventura;
+
+  status("Preset selecionado: " + tipo);
+}
+
+async function gerar(modo = "jogo_completo") {
+
+  const ideia =
+    ideiaEl.value.trim();
+
+  if (!ideia) {
+    alert("Digite uma ideia para o jogo.");
+    return;
+  }
+
+  status("🤖 A IA está criando seu jogo...");
+
+  resultadoEl.innerHTML = "";
+
+  try {
+
+    const resposta =
+      await fetch("/api/criar-jogo", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          ideia,
+          modo
+        })
+
+      });
+
+    const dados =
+      await resposta.json();
+
+    if (!resposta.ok ||
+        !dados.sucesso) {
+
+      throw new Error(
+        dados.erro ||
+        "Erro ao criar projeto."
+      );
+    }
+
+    projeto =
+      dados.projeto;
+
+    mostrarProjeto();
+
+    status(
+      "✅ Projeto criado com sucesso!"
+    );
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    status(
+      "❌ " +
+      (erro.message ||
+       "Erro ao conectar com a IA.")
+    );
+  }
+}
+
+async function executarAcao(acao) {
+
+  if (!projeto) {
+
+    alert(
+      "Primeiro crie um jogo."
+    );
+
+    return;
+  }
+
+  const mensagens = {
+
+    adicionar_combate:
+      "Adicionando sistema de combate...",
+
+    adicionar_pets:
+      "Adicionando sistema de pets...",
+
+    adicionar_loja:
+      "Adicionando sistema de loja...",
+
+    adicionar_missoes:
+      "Adicionando sistema de missões...",
+
+    adicionar_economia:
+      "Adicionando sistema de economia...",
+
+    adicionar_npcs:
+      "Adicionando NPCs...",
+
+    melhorar_mapa:
+      "Melhorando o mapa...",
+
+    corrigir_scripts:
+      "Analisando e corrigindo scripts..."
+
+  };
+
+  status(
+    "🧠 " +
+    (mensagens[acao] || "Atualizando projeto...")
+  );
+
+  try {
+
+    const resposta =
+      await fetch("/api/criar-jogo", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+          ideia:
+            ideiaEl.value.trim(),
+
+          modo:
+            "atualizacao",
+
+          acao,
+
+          projeto
+
+        })
+
+      });
+
+    const dados =
+      await resposta.json();
+
+    if (!resposta.ok ||
+        !dados.sucesso) {
+
+      throw new Error(
+        dados.erro ||
+        "Não foi possível atualizar."
+      );
+    }
+
+    projeto =
+      dados.projeto;
+
+    mostrarProjeto();
+
+    status(
+      "✅ Sistema adicionado/atualizado!"
+    );
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    status(
+      "❌ " +
+      (erro.message ||
+       "Erro na atualização.")
+    );
+  }
+}
+
+async function adicionarSistema() {
+
+  if (!projeto) {
+
+    await gerar();
+
+    return;
+  }
+
+  const sistema =
+    prompt(
+      "Qual sistema você quer adicionar?\n\nExemplos:\nCombate\nInventário\nPets\nBoss\nDay/Night\nCrafting\nTeleport\nClãs"
+    );
+
+  if (!sistema) return;
+
+  status(
+    "🧠 Adicionando: " +
+    sistema
+  );
+
+  try {
+
+    const resposta =
+      await fetch("/api/criar-jogo", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+          ideia:
+            ideiaEl.value.trim(),
+
+          modo:
+            "adicionar_sistema",
+
+          acao:
+            "ADICIONAR ESTE SISTEMA: " +
+            sistema,
+
+          projeto
+
+        })
+
+      });
+
+    const dados =
+      await resposta.json();
+
+    if (!resposta.ok ||
+        !dados.sucesso) {
+
+      throw new Error(
+        dados.erro ||
+        "Erro ao adicionar sistema."
+      );
+    }
+
+    projeto =
+      dados.projeto;
+
+    mostrarProjeto();
+
+    status(
+      "✅ Sistema " +
+      sistema +
+      " adicionado!"
+    );
+
+  } catch (erro) {
+
+    status(
+      "❌ " +
+      erro.message
+    );
+  }
+}
+
+async function expandir() {
+
+  if (!projeto) {
+
+    alert(
+      "Crie um projeto antes de expandir."
+    );
+
+    return;
+  }
+
+  const ideia =
+    prompt(
+      "O que você quer adicionar ao jogo?"
+    );
+
+  if (!ideia) return;
+
+  status(
+    "🧠 Expandindo o projeto..."
+  );
+
+  try {
+
+    const resposta =
+      await fetch("/api/criar-jogo", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+          ideia,
+
+          modo:
+            "expansao",
+
+          acao:
+            "EXPANDIR O PROJETO COM: " +
+            ideia,
+
+          projeto
+
+        })
+
+      });
+
+    const dados =
+      await resposta.json();
+
+    if (!resposta.ok ||
+        !dados.sucesso) {
+
+      throw new Error(
+        dados.erro ||
+        "Erro ao expandir."
+      );
+    }
+
+    projeto =
+      dados.projeto;
+
+    mostrarProjeto();
+
+    status(
+      "🚀 Projeto expandido!"
+    );
+
+  } catch (erro) {
+
+    status(
+      "❌ " +
+      erro.message
+    );
+  }
+}
+
+function mostrarProjeto() {
+
+  if (!projeto) return;
+
+  const map =
+    projeto.map || {};
+
+  const areas =
+    map.areas || [];
+
+  const objects =
+    projeto.objects || [];
+
+  const npcs =
+    projeto.npcs || [];
+
+  const systems =
+    projeto.systems || [];
+
+  const quests =
+    projeto.quests || [];
+
+  const items =
+    projeto.items || [];
+
+  const shops =
+    projeto.shops || [];
+
+  const pets =
+    projeto.pets || [];
+
+  const remotes =
+    projeto.recommended_remotes || [];
+
+  const scripts =
+    projeto.scripts || [];
+
+  document.getElementById(
+    "contadores"
+  ).style.display = "grid";
+
+  document.getElementById(
+    "cAreas"
+  ).textContent = areas.length;
+
+  document.getElementById(
+    "cObjects"
+  ).textContent = objects.length;
+
+  document.getElementById(
+    "cNpcs"
+  ).textContent = npcs.length;
+
+  document.getElementById(
+    "cSystems"
+  ).textContent = systems.length;
+
+  document.getElementById(
+    "tree"
+  ).innerHTML = `
+
+    <div>📦 Workspace</div>
+    <div>&nbsp;&nbsp;📁 GeneratedMap</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 Areas (${areas.length})</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 Objects (${objects.length})</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 NPCs (${npcs.length})</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 Spawns</div>
+
+    <div>📦 ReplicatedStorage</div>
+    <div>&nbsp;&nbsp;📁 RobloxAI</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 Remotes (${remotes.length})</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📁 Modules</div>
+
+    <div>📦 ServerScriptService</div>
+    <div>&nbsp;&nbsp;📁 RobloxAI</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;📜 Scripts (${scripts.length})</div>
+
+  `;
+
+  resultadoEl.innerHTML = "";
+
+  adicionarCard(
+    "🎮 " + projeto.game_name,
+    projeto.description,
+    [
+      "Gênero: " + projeto.genre,
+      "Objetivo: " + projeto.objective,
+      "Dificuldade: " + projeto.difficulty,
+      "Jogadores: " + projeto.estimated_players
+    ]
+  );
+
+  adicionarCard(
+    "🗺️ Mapa",
+    map.description,
+    areas.map(
+      a =>
+        "📍 " +
+        (a.name || "Área") +
+        " — " +
+        (a.description || "")
+    )
+  );
+
+  adicionarCard(
+    "🧱 Objetos",
+    "Objetos que serão criados pelo Builder.",
+    objects.map(
+      o =>
+        "• " +
+        (o.name || "Objeto") +
+        " — " +
+        (o.category || "Object")
+    )
+  );
+
+  adicionarCard(
+    "👾 NPCs",
+    "NPCs, inimigos e bosses.",
+    npcs.map(
+      n =>
+        "• " +
+        (n.name || "NPC") +
+        " — HP " +
+        (n.health || 100)
+    )
+  );
+
+  adicionarCard(
+    "⚙️ Sistemas",
+    "Sistemas planejados para o jogo.",
+    systems.map(
+      s =>
+        "• " +
+        (s.name || "Sistema") +
+        " — " +
+        (s.description || "")
+    )
+  );
+
+  adicionarCard(
+    "📜 Missões",
+    "Quests do jogo.",
+    quests.map(
+      q =>
+        "• " +
+        (q.name || "Quest") +
+        " — " +
+        (q.reward || "Recompensa")
+    )
+  );
+
+  adicionarCard(
+    "🎒 Itens",
+    "Itens e equipamentos.",
+    items.map(
+      i =>
+        "• " +
+        (i.name || "Item") +
+        " — " +
+        (i.rarity || "Common")
+    )
+  );
+
+  adicionarCard(
+    "🛒 Lojas",
+    "Lojas disponíveis.",
+    shops.map(
+      s =>
+        "• " +
+        (s.name || "Loja")
+    )
+  );
+
+  adicionarCard(
+    "🐾 Pets",
+    "Pets e habilidades.",
+    pets.map(
+      p =>
+        "• " +
+        (p.name || "Pet") +
+        " — " +
+        (p.ability || "")
+    )
+  );
+
+  adicionarCard(
+    "🔌 RemoteEvents",
+    "Comunicação entre cliente e servidor.",
+    remotes.map(
+      r =>
+        "• " +
+        (r.name || r) +
+        " — " +
+        (r.purpose || "")
+    )
+  );
+
+  adicionarCard(
+    "📜 Scripts",
+    "Scripts gerados pela IA.",
+    scripts.map(
+      s =>
+        "• " +
+        (s.name || "Script") +
+        " — " +
+        (s.type || "ServerScript")
+    )
+  );
+
+  adicionarCard(
+    "🧱 Builder",
+    "Builder completo para Roblox Studio.",
+    [
+      "CompleteBuilder.lua",
+      "Cria GeneratedMap",
+      "Cria objetos",
+      "Cria NPCs",
+      "Cria áreas",
+      "Cria SpawnLocation",
+      "Cria RemoteEvents",
+      "Configura Lighting"
+    ]
+  );
+
+  adicionarCard(
+    "📦 Arquivos",
+    "Arquivos disponíveis para exportação.",
+    [
+      "CompleteBuilder.lua",
+      "RobloxAI_Scripts.lua",
+      "RobloxAI_Project.rbxlx",
+      "RobloxAI_Project.json"
+    ]
+  );
+
+  adicionarCard(
+    "🚀 Próximas melhorias",
+    "Possíveis upgrades.",
+    projeto.future_upgrades || []
+  );
 
 }
 
+function adicionarCard(
+  titulo,
+  descricao,
+  itens
+) {
 
-function xml(value){
+  const card =
+    document.createElement("div");
 
-return String(value ?? "")
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;")
-.replace(/"/g,"&quot;")
-.replace(/'/g,"&apos;");
+  card.className =
+    "card";
 
+  let html =
+    "<h3>" +
+    escaparHTML(titulo) +
+    "</h3>";
+
+  html +=
+    "<p>" +
+    escaparHTML(descricao || "") +
+    "</p>";
+
+  if (itens && itens.length) {
+
+    html +=
+      '<ul class="list">';
+
+    itens.slice(0, 30)
+      .forEach(item => {
+
+        html +=
+          "<li>" +
+          escaparHTML(
+            typeof item === "string"
+              ? item
+              : JSON.stringify(item)
+          ) +
+          "</li>";
+
+      });
+
+    html += "</ul>";
+  }
+
+  card.innerHTML = html;
+
+  resultadoEl.appendChild(card);
 }
 
+function escaparHTML(texto) {
 
-function preset(tipo){
-
-const ideias={
-
-"sobrevivência":
-"Crie um jogo de sobrevivência em uma ilha com monstros, coleta de recursos, moedas, loja, inventário, níveis, XP, missões, pets e boss gigante.",
-
-"simulator":
-"Crie um simulator onde o jogador coleta recursos, ganha moedas, compra upgrades, desbloqueia áreas, possui pets, níveis, rebirth e leaderboard.",
-
-"RPG":
-"Crie um RPG de mundo aberto com cidades, NPCs, classes, armas, inimigos, missões, XP, níveis, lojas, pets e bosses.",
-
-"obby":
-"Crie um obby com 30 fases, checkpoints, moedas, power-ups, áreas secretas, recompensas e leaderboard.",
-
-"aventura":
-"Crie uma aventura em um mundo com várias áreas, NPCs, missões, inimigos, itens, lojas, pets, XP e boss.",
-
-"pets":
-"Crie um pet simulator com moedas, ovos, pets de raridades diferentes, mundos desbloqueáveis, upgrades, XP e rebirth."
-
-};
-
-document.getElementById("ideia").value =
-ideias[tipo] || "";
-
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
+function baixarArquivo(
+  nome,
+  conteudo,
+  tipo = "text/plain"
+) {
 
-async function gerar(modo="jogo_completo"){
+  const blob =
+    new Blob(
+      [conteudo],
+      { type: tipo }
+    );
 
-const ideia =
-document.getElementById("ideia").value.trim();
+  const url =
+    URL.createObjectURL(blob);
 
-if(!ideia){
+  const a =
+    document.createElement("a");
 
-alert("Digite a ideia do jogo.");
+  a.href = url;
+  a.download = nome;
 
-return;
+  document.body.appendChild(a);
 
+  a.click();
+
+  a.remove();
+
+  setTimeout(
+    () => URL.revokeObjectURL(url),
+    1000
+  );
 }
 
-const status =
-document.getElementById("status");
+function downloadBuilder() {
 
-const loading =
-document.getElementById("loading");
+  if (!projeto) {
 
-status.textContent =
-"Enviando para a IA...";
+    alert(
+      "Crie um projeto primeiro."
+    );
 
-loading.classList.add("active");
+    return;
+  }
 
-try{
+  baixarArquivo(
+    "CompleteBuilder.lua",
+    projeto.builder_script ||
+    "-- Builder não disponível."
+  );
 
-const response =
-await fetch("/api/criar-jogo",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-ideia,
-modo
-})
-
-});
-
-
-const data =
-await response.json();
-
-
-if(!response.ok){
-
-throw new Error(
-data.error ||
-"Erro ao gerar projeto."
-);
-
+  status(
+    "🧱 CompleteBuilder.lua baixado."
+  );
 }
 
+function downloadScripts() {
 
-projeto = data;
+  if (!projeto) {
 
-mostrar(data);
+    alert(
+      "Crie um projeto primeiro."
+    );
 
-status.textContent =
-"✅ Projeto criado!";
+    return;
+  }
 
+  baixarArquivo(
+    "RobloxAI_Scripts.lua",
+    projeto.all_scripts ||
+    "-- Scripts não disponíveis."
+  );
 
-}catch(error){
-
-console.error(error);
-
-status.textContent =
-"❌ " + error.message;
-
-alert(
-"Erro:\n\n" +
-error.message
-);
-
-}finally{
-
-loading.classList.remove("active");
-
+  status(
+    "📜 Scripts baixados."
+  );
 }
 
+function downloadJSON() {
+
+  if (!projeto) {
+
+    alert(
+      "Crie um projeto primeiro."
+    );
+
+    return;
+  }
+
+  baixarArquivo(
+    "RobloxAI_Project.json",
+    JSON.stringify(
+      projeto,
+      null,
+      2
+    ),
+    "application/json"
+  );
+
+  status(
+    "📄 JSON do projeto baixado."
+  );
 }
 
-
-function mostrar(p){
-
-document
-.getElementById("result")
-.classList.add("active");
-
-
-document
-.getElementById("game")
-.innerHTML=`
-
-<h2>
-🎮 ${esc(p.game_name)}
-</h2>
-
-<p class="muted">
-${esc(p.description)}
-</p>
-
-<div class="badge">
-${esc(p.genre)}
-</div>
-
-<br><br>
-
-<b>Objetivo:</b>
-${esc(p.objective)}
-
-<br><br>
-
-<b>Dificuldade:</b>
-${esc(p.difficulty || "Normal")}
-
-`;
-
-
-const cards =
-document.getElementById("cards");
-
-cards.innerHTML="";
-
-
-card(
-"🗺️ MAPA",
-lista(
-p.map?.areas,
-a=>`
-<b>${esc(a.name)}</b>
-<br>
-Tipo: ${esc(a.type)}
-<br>
-${esc(a.description)}
-`
-)+
-`
-<br>
-<p class="muted">
-${esc(p.map?.description)}
-</p>
-`
-);
-
-
-card(
-"🧱 OBJETOS",
-lista(
-p.objects,
-o=>`
-<b>${esc(o.name)}</b>
-<br>
-${esc(o.description)}
-<br>
-Posição:
-${esc(JSON.stringify(o.position))}
-<br>
-Tamanho:
-${esc(JSON.stringify(o.size))}
-`
-)
-);
-
-
-card(
-"🤖 NPCS",
-lista(
-p.npcs,
-n=>`
-<b>${esc(n.name)}</b>
-<br>
-Tipo: ${esc(n.type)}
-<br>
-Vida: ${esc(n.health)}
-<br>
-Dano: ${esc(n.damage)}
-<br>
-Velocidade: ${esc(n.speed)}
-<br>
-${esc(n.description)}
-`
-)
-);
-
-
-card(
-"⚙️ SISTEMAS",
-lista(
-p.systems,
-s=>`
-<b>${esc(s.name)}</b>
-<br>
-${esc(s.description)}
-<br>
-Prioridade:
-${esc(s.priority)}
-`
-)
-);
-
-
-card(
-"🎯 MISSÕES",
-lista(
-p.quests,
-q=>`
-<b>${esc(q.name)}</b>
-<br>
-${esc(q.description)}
-<br>
-Objetivo:
-${esc(q.objective)}
-<br>
-Recompensa:
-${esc(q.reward)}
-`
-)
-);
-
-
-card(
-"🎒 ITENS",
-lista(
-p.items,
-i=>`
-<b>${esc(i.name)}</b>
-<br>
-Tipo: ${esc(i.type)}
-<br>
-Preço: ${esc(i.price)}
-<br>
-${esc(i.description)}
-`
-)
-);
-
-
-card(
-"🛒 LOJAS",
-lista(
-p.shops,
-s=>`
-<b>${esc(s.name)}</b>
-<br>
-${esc(s.description)}
-<br>
-Itens:
-${esc((s.items||[]).join(", "))}
-`
-)
-);
-
-
-card(
-"🐾 PETS",
-lista(
-p.pets,
-pet=>`
-<b>${esc(pet.name)}</b>
-<br>
-Raridade:
-${esc(pet.rarity)}
-<br>
-${esc(pet.description)}
-<br>
-Bônus:
-${esc(pet.bonus)}
-`
-)
-);
-
-
-card(
-"🔌 REMOTES",
-lista(
-p.recommended_remotes,
-r=>`
-<b>${esc(r.name)}</b>
-<br>
-Tipo:
-${esc(r.type)}
-<br>
-${esc(r.description)}
-`
-)
-);
-
-
-card(
-"🧱 COMPLETE BUILDER",
-codigo(
-p.builder_script?.name ||
-"CompleteBuilder",
-p.builder_script?.code ||
-"-- Builder não disponível."
-)
-);
-
-
-(p.scripts||[]).forEach(s=>{
-
-card(
-"📜 "+esc(s.name),
-`
-<p class="muted">
-
-Local:
-${esc(s.location)}
-
-<br>
-
-Tipo:
-${esc(s.type)}
-
-<br>
-
-${esc(s.description)}
-
-</p>
-
-<br>
-
-${codigo(
-s.name,
-s.code
-)}
-
-`
-);
-
-});
-
-
-card(
-"📋 PASSOS",
-lista(
-p.steps,
-s=>esc(s)
-)
-);
-
-
-card(
-"🚀 FUTUROS UPGRADES",
-lista(
-p.future_upgrades,
-s=>esc(s)
-)
-);
-
-
-document.getElementById("objects")
-.textContent=(p.objects||[]).length;
-
-document.getElementById("npcs")
-.textContent=(p.npcs||[]).length;
-
-document.getElementById("areas")
-.textContent=(p.map?.areas||[]).length;
-
-document.getElementById("systems")
-.textContent=(p.systems||[]).length;
-
-document.getElementById("quests")
-.textContent=(p.quests||[]).length;
-
-document.getElementById("items")
-.textContent=(p.items||[]).length;
-
-document.getElementById("pets")
-.textContent=(p.pets||[]).length;
-
-document.getElementById("remotes")
-.textContent=(p.recommended_remotes||[]).length;
-
-document.getElementById("scripts")
-.textContent=(p.scripts||[]).length;
-
-}
-
-
-function card(title,content){
-
-const div =
-document.createElement("div");
-
-div.className="card";
-
-div.innerHTML=
-`
-<h3>${title}</h3>
-${content}
-`;
-
-document
-.getElementById("cards")
-.appendChild(div);
-
-}
-
-
-function lista(array,render){
-
-if(!Array.isArray(array)||!array.length){
-
-return `
-<p class="muted">
-Nenhum item.
-</p>
-`;
-
-}
-
-return `
-<div class="list">
-
-${array.map(x=>`
-
-<div class="item">
-${render(x)}
-</div>
-
-`).join("")}
-
-</div>
-`;
-
-}
-
-
-function codigo(name,code){
-
-return `
-
-<div class="code">
-
-<div class="code-title">
-${esc(name)}
-</div>
-
-<pre>${esc(code)}</pre>
-
-</div>
-
-`;
-
-}
-
-
-function baixar(nome,conteudo){
-
-const blob =
-new Blob(
-[conteudo],
-{
-type:"text/plain;charset=utf-8"
-}
-);
-
-const url =
-URL.createObjectURL(blob);
-
-const a =
-document.createElement("a");
-
-a.href=url;
-a.download=nome;
-
-document.body.appendChild(a);
-
-a.click();
-
-a.remove();
-
-URL.revokeObjectURL(url);
-
-}
-
-
-function downloadBuilder(){
-
-if(!projeto){
-
-alert("Crie um jogo primeiro.");
-
-return;
-
-}
-
-baixar(
-"CompleteBuilder.lua",
-projeto.builder_script?.code ||
-"-- Builder vazio"
-);
-
-}
-
-
-function downloadScripts(){
-
-if(!projeto){
-
-alert("Crie um jogo primeiro.");
-
-return;
-
-}
-
-let texto="";
-
-(projeto.scripts||[]).forEach(s=>{
-
-texto+=`
-
--- ========================================
--- ${s.name}
--- Local: ${s.location}
--- Tipo: ${s.type}
--- ========================================
-
-${s.code||""}
-
-`;
-
-});
-
-baixar(
-"RobloxAI_Scripts.lua",
-texto
-);
-
-}
-
-
-function downloadRBXLX(){
-
-if(!projeto){
-
-alert("Crie um jogo primeiro.");
-
-return;
-
-}
-
-let builder =
-projeto.builder_script?.code ||
-"-- Builder vazio";
-
-
-const source =
-xml(builder);
-
-
-const xmlFile =
-`<?xml version="1.0" encoding="utf-8"?>
-
-<roblox
-version="4"
-xmlns:xmime="http://www.w3.org/2001/XMLSchema-instance"
->
-
-<Item class="Workspace">
-
-<Properties>
-
-<string name="Name">
-Workspace
-</string>
-
-</Properties>
-
-</Item>
-
-<Item class="ServerScriptService">
-
-<Properties>
-
-<string name="Name">
-ServerScriptService
-</string>
-
-</Properties>
-
-<Item class="Script">
-
-<Properties>
-
-<string name="Name">
-CompleteBuilder
-</string>
-
-<ProtectedString name="Source">
-${source}
-</ProtectedString>
-
-</Properties>
-
-</Item>
-
-</Item>
+function criarRBXLX() {
+
+  if (!projeto) {
+
+    alert(
+      "Crie um projeto primeiro."
+    );
+
+    return;
+  }
+
+  const builder =
+    escaparXML(
+      projeto.builder_script ||
+      ""
+    );
+
+  const scripts =
+    escaparXML(
+      projeto.all_scripts ||
+      ""
+    );
+
+  const nome =
+    escaparXML(
+      projeto.game_name ||
+      "Roblox AI Game"
+    );
+
+  return `<?xml version="1.0" encoding="utf-8"?>
+
+<roblox version="4">
+
+  <Item class="DataModel">
+    <Properties>
+      <string name="Name">${nome}</string>
+    </Properties>
+
+    <Item class="Folder">
+      <Properties>
+        <string name="Name">RobloxAIStudio</string>
+      </Properties>
+
+      <Item class="Script">
+        <Properties>
+          <string name="Name">CompleteBuilder</string>
+          <ProtectedString name="Source"><![CDATA[
+${builder}
+          ]]></ProtectedString>
+        </Properties>
+      </Item>
+
+      <Item class="Script">
+        <Properties>
+          <string name="Name">RobloxAI_Scripts</string>
+          <ProtectedString name="Source"><![CDATA[
+${scripts}
+          ]]></ProtectedString>
+        </Properties>
+      </Item>
+
+    </Item>
+
+  </Item>
 
 </roblox>`;
-
-
-baixar(
-(projeto.game_name||"MeuJogo")
-.replace(/[^a-z0-9]/gi,"_")+
-".rbxlx",
-xmlFile
-);
-
 }
 
+function escaparXML(texto) {
 
-function expandir(){
-
-if(!projeto){
-
-alert("Crie um jogo primeiro.");
-
-return;
-
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
-const pedido =
-prompt(
-"O que você quer adicionar?"
-);
+function downloadRBXLX() {
 
-if(!pedido){
+  if (!projeto) {
 
-return;
+    alert(
+      "Crie um projeto primeiro."
+    );
 
+    return;
+  }
+
+  const xml =
+    criarRBXLX();
+
+  baixarArquivo(
+    "RobloxAI_Project.rbxlx",
+    xml,
+    "application/xml"
+  );
+
+  status(
+    "📦 RBXLX gerado."
+  );
 }
 
-const ideiaAtual =
-document.getElementById("ideia").value;
+function novo() {
 
-document.getElementById("ideia").value =
-ideiaAtual+
-"\\n\\nADICIONE ESTE SISTEMA:\\n"+
-pedido;
+  projeto = null;
 
-gerar("expansao");
+  ideiaEl.value =
+    "Crie um jogo de sobrevivência em uma ilha com monstros, armas, casas e sistema de moedas.";
 
+  resultadoEl.innerHTML = "";
+
+  document.getElementById(
+    "contadores"
+  ).style.display = "none";
+
+  document.getElementById(
+    "tree"
+  ).innerHTML = `
+
+    <div>📦 Workspace</div>
+    <div>📦 ReplicatedStorage</div>
+    <div>📦 ServerScriptService</div>
+    <div>💡 Novo projeto vazio.</div>
+
+  `;
+
+  status(
+    "🆕 Novo projeto criado."
+  );
 }
 
+function limpar() {
 
-function novo(){
+  projeto = null;
 
-projeto=null;
+  ideiaEl.value = "";
 
-document.getElementById("ideia").value="";
+  resultadoEl.innerHTML = "";
 
-document.getElementById("result")
-.classList.remove("active");
+  document.getElementById(
+    "contadores"
+  ).style.display = "none";
 
-document.getElementById("status")
-.textContent=
-"Novo projeto.";
+  document.getElementById(
+    "tree"
+  ).innerHTML = `
 
+    <div>📦 Workspace</div>
+    <div>📦 ReplicatedStorage</div>
+    <div>📦 ServerScriptService</div>
+    <div>🗑️ Projeto limpo.</div>
+
+  `;
+
+  status(
+    "🗑️ Tudo foi limpo."
+  );
 }
 
+document.addEventListener(
+  "keydown",
+  function(event) {
 
-document
-.getElementById("ideia")
-.addEventListener(
-"keydown",
-event=>{
+    if (
+      (event.ctrlKey ||
+       event.metaKey) &&
+      event.key === "Enter"
+    ) {
 
-if(
-event.ctrlKey &&
-event.key==="Enter"
-){
+      event.preventDefault();
 
-gerar();
+      gerar();
+    }
 
-}
-
-}
+  }
 );
 
 </script>
 
 </body>
-
-</html>
+  </html>
