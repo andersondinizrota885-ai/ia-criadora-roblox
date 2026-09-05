@@ -1,6 +1,8 @@
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Use POST." });
+    return res.status(405).json({
+      error: "Use POST."
+    });
   }
 
   try {
@@ -16,90 +18,43 @@ module.exports = async function handler(req, res) {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY não configurada."
+        error: "GEMINI_API_KEY não configurada na Vercel."
       });
     }
 
     const prompt = `
-Você é um desenvolvedor profissional de Roblox Studio especializado em Luau.
+Crie um projeto de jogo Roblox baseado nesta ideia:
 
-O usuário vai fornecer uma ideia de jogo.
-Transforme essa ideia em um projeto detalhado que possa ser montado no Roblox Studio.
+${ideia.trim().slice(0, 3000)}
 
-IMPORTANTE:
-- Responda SOMENTE JSON válido.
-- Não use markdown.
-- Não coloque texto fora do JSON.
-- Gere scripts Luau completos e funcionais.
-- Organize cada script pelo local onde deve ser colocado.
-- Não invente APIs inexistentes do Roblox.
-
-Estrutura obrigatória:
+Responda em JSON válido com esta estrutura:
 
 {
   "nome": "Nome do jogo",
-  "descricao": "Descrição completa",
+  "descricao": "Descrição",
   "genero": "Gênero",
-  "objetivo": "Objetivo principal do jogador",
-
-  "mapa": {
-    "descricao": "Descrição geral do mapa",
-    "areas": [
-      {
-        "nome": "Nome da área",
-        "descricao": "Descrição",
-        "posicao": "Descrição aproximada da posição"
-      }
-    ]
-  },
-
-  "objetos": [
-    {
-      "nome": "Nome",
-      "tipo": "Part/NPC/Model/etc",
-      "descricao": "Descrição",
-      "local": "Workspace"
-    }
-  ],
-
-  "npc": [
-    {
-      "nome": "Nome do NPC",
-      "tipo": "Inimigo/Animal/NPC",
-      "vida": 100,
-      "dano": 10,
-      "descricao": "Comportamento do NPC"
-    }
-  ],
-
-  "sistemas": [
-    {
-      "nome": "Nome do sistema",
-      "descricao": "Como funciona"
-    }
-  ],
-
+  "objetivo": "Objetivo do jogador",
+  "mapa": "Descrição do mapa",
+  "sistemas": ["Sistema 1", "Sistema 2", "Sistema 3"],
   "scripts": [
     {
       "nome": "Nome do script",
       "local": "ServerScriptService",
-      "tipo": "Script",
-      "descricao": "O que o script faz",
-      "codigo": "CÓDIGO LUA COMPLETO"
+      "codigo": "Código Luau"
     }
   ],
-
   "passos": [
-    "Passo 1 para montar o jogo",
-    "Passo 2 para montar o jogo",
-    "Passo 3 para montar o jogo"
+    "Passo 1",
+    "Passo 2",
+    "Passo 3"
   ]
 }
 
-A ideia do usuário é:
-
-${ideia.trim().slice(0, 5000)}
+Não use Markdown.
+Não coloque texto antes ou depois do JSON.
 `;
+
+    console.log("Iniciando chamada para Gemini...");
 
     const resposta = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
@@ -121,21 +76,22 @@ ${ideia.trim().slice(0, 5000)}
           ],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 20000,
             responseMimeType: "application/json"
           }
         })
       }
     );
 
+    console.log("Status Gemini:", resposta.status);
+
     const dados = await resposta.json();
 
     if (!resposta.ok) {
-      console.error("Erro Gemini:", dados);
+      console.error("GEMINI_ERRO:", JSON.stringify(dados));
 
       return res.status(500).json({
         error: "Erro na API Gemini.",
-        details: dados?.error?.message || "Erro desconhecido."
+        details: dados?.error?.message || "Erro desconhecido"
       });
     }
 
@@ -143,6 +99,8 @@ ${ideia.trim().slice(0, 5000)}
       dados?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!texto) {
+      console.error("GEMINI_SEM_RESPOSTA:", JSON.stringify(dados));
+
       return res.status(500).json({
         error: "A Gemini não retornou conteúdo."
       });
@@ -152,25 +110,20 @@ ${ideia.trim().slice(0, 5000)}
 
     try {
       projeto = JSON.parse(texto);
-    } catch {
-      const inicio = texto.indexOf("{");
-      const fim = texto.lastIndexOf("}");
+    } catch (erro) {
+      console.error("JSON_INVALIDO:", texto);
 
-      if (inicio === -1 || fim === -1) {
-        return res.status(500).json({
-          error: "A IA retornou um formato inválido."
-        });
-      }
-
-      projeto = JSON.parse(
-        texto.substring(inicio, fim + 1)
-      );
+      return res.status(500).json({
+        error: "A Gemini retornou JSON inválido."
+      });
     }
+
+    console.log("Projeto criado com sucesso!");
 
     return res.status(200).json(projeto);
 
   } catch (erro) {
-    console.error("Erro interno:", erro);
+    console.error("ERRO_INTERNO:", erro);
 
     return res.status(500).json({
       error: "Erro interno do servidor.",
