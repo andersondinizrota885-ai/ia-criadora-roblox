@@ -25,49 +25,74 @@ module.exports = async function handler(req, res) {
     const prompt = `
 Você é um desenvolvedor profissional de Roblox Studio especializado em Luau.
 
-Transforme a ideia do usuário em um projeto detalhado para Roblox Studio.
+Sua tarefa é transformar a ideia do usuário em um projeto de Roblox.
 
-REGRAS:
+O projeto precisa conter:
+
+1. MAPA
+2. ÁREAS
+3. PARTS
+4. OBJETOS
+5. NPCS
+6. SISTEMAS
+7. SCRIPTS
+8. UM BUILDER SCRIPT QUE CONSTRÓI O MAPA AUTOMATICAMENTE
+
+REGRAS IMPORTANTES:
+
 - Responda SOMENTE com JSON válido.
 - Não use Markdown.
-- Não coloque texto fora do JSON.
 - Não use blocos de código.
-- Gere scripts Luau completos e funcionais.
+- Não escreva explicações fora do JSON.
 - Use somente APIs reais do Roblox.
-- Informe onde cada script deve ser colocado.
-- Não invente APIs inexistentes.
+- Use Luau válido.
+- Os scripts devem ser completos.
+- O Builder deve criar o mapa usando Instance.new.
+- O Builder deve criar Parts, Models, pastas e NPCs básicos.
+- O Builder deve configurar posições, tamanhos, materiais e propriedades.
+- Não use serviços ou APIs inexistentes.
+- Não use require de IDs externos.
+- Não use código externo.
+- Não use HTTPService para baixar código.
+- O projeto deve funcionar sem depender de plugins externos.
 
-A resposta deve seguir exatamente esta estrutura:
+ESTRUTURA OBRIGATÓRIA:
 
 {
   "game_name": "Nome do jogo",
-  "description": "Descrição do jogo",
+
+  "description": "Descrição completa",
+
   "genre": "Gênero",
+
   "objective": "Objetivo principal",
 
   "map": {
-    "description": "Descrição completa do mapa",
+    "description": "Descrição do mapa",
+
     "areas": [
       {
         "name": "Nome da área",
-        "description": "Descrição da área"
+        "description": "Descrição"
       }
     ]
   },
 
   "objects": [
     {
-      "name": "Nome do objeto",
-      "type": "Part, Model, NPC etc",
+      "name": "Nome",
+      "type": "Part",
       "description": "Descrição",
-      "location": "Workspace"
+      "position": [0, 5, 0],
+      "size": [10, 1, 10],
+      "material": "Grass"
     }
   ],
 
   "npcs": [
     {
-      "name": "Nome do NPC",
-      "type": "Inimigo ou NPC",
+      "name": "Nome",
+      "type": "Enemy",
       "health": 100,
       "damage": 10,
       "description": "Comportamento"
@@ -76,17 +101,23 @@ A resposta deve seguir exatamente esta estrutura:
 
   "systems": [
     {
-      "name": "Nome do sistema",
+      "name": "Sistema",
       "description": "Como funciona"
     }
   ],
+
+  "builder_script": {
+    "name": "MapBuilder",
+    "description": "Script que constrói o mapa automaticamente",
+    "code": "CÓDIGO LUA COMPLETO"
+  },
 
   "scripts": [
     {
       "name": "Nome do script",
       "location": "ServerScriptService",
       "type": "Script",
-      "description": "O que o script faz",
+      "description": "Função",
       "code": "CÓDIGO LUA COMPLETO"
     }
   ],
@@ -98,14 +129,35 @@ A resposta deve seguir exatamente esta estrutura:
   ]
 }
 
+REGRAS PARA O BUILDER:
+
+O Builder deve:
+
+- Criar uma pasta chamada GeneratedMap dentro de Workspace.
+- Criar as Parts do mapa.
+- Criar SpawnLocation quando necessário.
+- Criar áreas organizadas em Models ou Folders.
+- Usar Vector3.new().
+- Usar Instance.new().
+- Definir Name, Size, Position, Anchored, Material e outras propriedades válidas.
+- Criar iluminação simples quando necessário.
+- Criar obstáculos.
+- Criar plataformas.
+- Criar estruturas.
+- Criar NPCs básicos quando possível.
+- Usar funções para evitar código repetido.
+- Ser independente.
+- Não depender de assets externos.
+
+IMPORTANTE:
+
+O Builder deve ser um script executável dentro do Roblox Studio.
+
 IDEIA DO USUÁRIO:
 
 ${ideia.trim().slice(0, 5000)}
 `;
 
-    // Modelos para tentar.
-    // Se o primeiro estiver temporariamente sobrecarregado,
-    // tentamos o próximo.
     const modelos = [
       "gemini-3.6-flash",
       "gemini-3.6-flash-lite"
@@ -114,20 +166,28 @@ ${ideia.trim().slice(0, 5000)}
     let ultimoErro = null;
 
     for (const modelo of modelos) {
+
       for (let tentativa = 1; tentativa <= 3; tentativa++) {
+
         try {
+
           console.log(
-            `Tentando Gemini: ${modelo} | tentativa ${tentativa}`
+            "Gemini:",
+            modelo,
+            "Tentativa:",
+            tentativa
           );
 
           const resposta = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
             {
               method: "POST",
+
               headers: {
                 "Content-Type": "application/json",
                 "x-goog-api-key": apiKey
               },
+
               body: JSON.stringify({
                 contents: [
                   {
@@ -138,6 +198,7 @@ ${ideia.trim().slice(0, 5000)}
                     ]
                   }
                 ],
+
                 generationConfig: {
                   responseMimeType: "application/json"
                 }
@@ -148,13 +209,17 @@ ${ideia.trim().slice(0, 5000)}
           const dados = await resposta.json();
 
           console.log(
-            `Gemini ${modelo} respondeu com status ${resposta.status}`
+            "Status Gemini:",
+            resposta.status
           );
 
-          // Se deu certo
           if (resposta.ok) {
+
             const texto =
-              dados?.candidates?.[0]?.content?.parts?.[0]?.text;
+              dados?.candidates?.[0]
+                ?.content
+                ?.parts?.[0]
+                ?.text;
 
             if (!texto) {
               ultimoErro =
@@ -166,21 +231,46 @@ ${ideia.trim().slice(0, 5000)}
             let projeto;
 
             try {
+
               projeto = JSON.parse(texto);
+
             } catch (erro) {
+
               console.error(
-                "JSON retornado pela Gemini:",
+                "JSON inválido:",
                 texto
               );
 
               ultimoErro =
-                "A Gemini retornou um JSON inválido.";
+                "A Gemini retornou JSON inválido.";
 
               continue;
             }
 
+            if (!projeto.game_name) {
+              projeto.game_name =
+                "Meu Jogo Roblox";
+            }
+
+            if (!Array.isArray(projeto.objects)) {
+              projeto.objects = [];
+            }
+
+            if (!Array.isArray(projeto.npcs)) {
+              projeto.npcs = [];
+            }
+
+            if (!Array.isArray(projeto.systems)) {
+              projeto.systems = [];
+            }
+
+            if (!Array.isArray(projeto.scripts)) {
+              projeto.scripts = [];
+            }
+
             console.log(
-              "Projeto criado com sucesso!"
+              "Projeto criado:",
+              projeto.game_name
             );
 
             return res.status(200).json(projeto);
@@ -193,65 +283,79 @@ ${ideia.trim().slice(0, 5000)}
           ultimoErro = mensagem;
 
           console.error(
-            `Erro Gemini ${modelo}:`,
+            "Erro Gemini:",
             mensagem
           );
 
-          // Erros que não adianta repetir
           if (
             resposta.status === 400 ||
             resposta.status === 401 ||
             resposta.status === 403
           ) {
+
             return res.status(500).json({
-              error: "Erro na configuração da Gemini.",
+              error:
+                "Erro na configuração da Gemini.",
               details: mensagem
             });
+
           }
 
-          // Se for erro temporário, espera e tenta novamente
+          if (
+            resposta.status === 404
+          ) {
+            break;
+          }
+
           if (
             resposta.status === 429 ||
             resposta.status === 500 ||
             resposta.status === 502 ||
             resposta.status === 503 ||
             resposta.status === 504 ||
-            mensagem.toLowerCase().includes("high demand") ||
-            mensagem.toLowerCase().includes("overloaded") ||
-            mensagem.toLowerCase().includes("temporarily")
+            mensagem
+              .toLowerCase()
+              .includes("high demand") ||
+            mensagem
+              .toLowerCase()
+              .includes("overloaded") ||
+            mensagem
+              .toLowerCase()
+              .includes("temporarily")
           ) {
-            const espera = tentativa * 2000;
 
-            console.log(
-              `Servidor ocupado. Esperando ${espera}ms...`
-            );
+            const espera =
+              tentativa * 2000;
 
-            await new Promise(resolve =>
-              setTimeout(resolve, espera)
+            await new Promise(
+              resolve =>
+                setTimeout(
+                  resolve,
+                  espera
+                )
             );
 
             continue;
           }
 
-          // Modelo não disponível:
-          // pula para o próximo modelo
-          if (resposta.status === 404) {
-            break;
-          }
-
           break;
 
         } catch (erro) {
+
           console.error(
-            "Erro na tentativa:",
+            "Erro de conexão:",
             erro
           );
 
-          ultimoErro = erro.message;
+          ultimoErro =
+            erro.message;
 
-          // Pequena espera antes de tentar novamente
-          await new Promise(resolve =>
-            setTimeout(resolve, tentativa * 2000)
+          await new Promise(
+            resolve =>
+              setTimeout(
+                resolve,
+                tentativa * 2000
+              )
           );
         }
       }
@@ -266,14 +370,17 @@ ${ideia.trim().slice(0, 5000)}
     });
 
   } catch (erro) {
+
     console.error(
-      "ERRO_INTERNO:",
+      "ERRO INTERNO:",
       erro
     );
 
     return res.status(500).json({
-      error: "Erro interno do servidor.",
-      details: erro.message
+      error:
+        "Erro interno do servidor.",
+      details:
+        erro.message
     });
   }
 };
