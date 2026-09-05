@@ -29,7 +29,6 @@ Transforme essa ideia em um projeto detalhado que possa ser montado no Roblox St
 IMPORTANTE:
 - Responda SOMENTE JSON válido.
 - Não use markdown.
-- Não use ```json.
 - Não coloque texto fora do JSON.
 - Gere scripts Luau completos e funcionais.
 - Organize cada script pelo local onde deve ser colocado.
@@ -178,4 +177,4 @@ ${ideia.trim().slice(0, 5000)}
       details: erro.message
     });
   }
-}; 
+};
