@@ -1,121 +1,165 @@
-const OpenAI = require("openai");
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Criadora Roblox</title>
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-module.exports = async function handler(req, res) {
-  // Permitir apenas POST
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Método não permitido. Use POST."
-    });
-  }
-
-  try {
-    const { ideia } = req.body || {};
-
-    // Verificar se o usuário enviou uma ideia
-    if (!ideia || typeof ideia !== "string") {
-      return res.status(400).json({
-        error: "Envie uma ideia para o jogo."
-      });
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      padding: 20px;
     }
 
-    // Limite para evitar pedidos gigantes
-    const ideiaLimpa = ideia.trim().slice(0, 5000);
-
-    const resposta = await client.responses.create({
-      model: "gpt-5.6-luna",
-
-      instructions: `
-Você é uma IA especializada em criar projetos para Roblox Studio.
-
-O usuário vai descrever uma ideia de jogo.
-
-Sua tarefa é transformar a ideia em um pequeno projeto organizado,
-com scripts Luau que possam ser usados no Roblox Studio.
-
-IMPORTANTE:
-- Responda SOMENTE com JSON válido.
-- Não coloque markdown.
-- Não coloque ```json.
-- Gere código Luau válido.
-- Explique no campo "description" como os scripts devem ser usados.
-- Não invente campos fora do formato solicitado.
-
-Formato obrigatório:
-
-{
-  "game_name": "Nome do jogo",
-  "description": "Descrição curta do projeto",
-  "scripts": [
-    {
-      "name": "NomeDoScript",
-      "location": "ServerScriptService",
-      "code": "código Luau aqui"
-    }
-  ]
-}
-
-Crie scripts simples, organizados e seguros.
-Quando possível, indique no campo "location" onde o script deve ficar.
-`,
-
-      input: `
-Crie um projeto Roblox baseado nesta ideia:
-
-${ideiaLimpa}
-`
-    });
-
-    const texto = resposta.output_text;
-
-    if (!texto) {
-      throw new Error("A IA não retornou conteúdo.");
+    .container {
+      max-width: 700px;
+      margin: auto;
     }
 
-    // Tentar transformar a resposta em JSON
-    let projeto;
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 15px;
+      box-sizing: border-box;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
 
-    try {
-      projeto = JSON.parse(texto);
-    } catch (erro) {
-      // Caso a IA tenha colocado algum texto extra
-      const inicio = texto.indexOf("{");
-      const fim = texto.lastIndexOf("}");
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: #5865f2;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
 
-      if (inicio === -1 || fim === -1) {
-        throw new Error("A resposta da IA não é um JSON válido.");
+    button:disabled {
+      opacity: 0.6;
+    }
+
+    #status {
+      margin-top: 15px;
+    }
+
+    #result {
+      margin-top: 20px;
+    }
+
+    pre {
+      background: #222;
+      padding: 15px;
+      overflow-x: auto;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>🤖 IA Criadora Roblox</h1>
+
+    <textarea
+      id="gameIdea"
+      placeholder="Digite a ideia do seu jogo..."
+    ></textarea>
+
+    <button id="createButton">
+      🎮 Criar Jogo
+    </button>
+
+    <div id="status"></div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const API_URL = "/api/criar-jogo";
+
+    const button = document.getElementById("createButton");
+    const idea = document.getElementById("gameIdea");
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+
+    button.addEventListener("click", async () => {
+      const ideia = idea.value.trim();
+
+      if (!ideia) {
+        status.textContent = "❌ Digite uma ideia primeiro.";
+        return;
       }
 
-      projeto = JSON.parse(
-        texto.substring(inicio, fim + 1)
-      );
-    }
+      button.disabled = true;
+      status.textContent = "⏳ Criando seu jogo...";
+      result.innerHTML = "";
 
-    // Garantir estrutura mínima
-    if (!projeto.game_name) {
-      projeto.game_name = "Meu Jogo Roblox";
-    }
+      try {
+        const resposta = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ideia: ideia
+          })
+        });
 
-    if (!projeto.description) {
-      projeto.description = "Projeto criado pela IA.";
-    }
+        const texto = await resposta.text();
 
-    if (!Array.isArray(projeto.scripts)) {
-      projeto.scripts = [];
-    }
+        let dados;
 
-    return res.status(200).json(projeto);
+        try {
+          dados = JSON.parse(texto);
+        } catch {
+          throw new Error(texto);
+        }
 
-  } catch (erro) {
+        if (!resposta.ok) {
+          throw new Error(
+            dados.error || "Erro no servidor."
+          );
+        }
 
-    console.error("Erro:", erro);
+        status.textContent = "✅ Jogo criado!";
 
-    return res.status(500).json({
-      error: "Não foi possível criar o jogo.",
-      details: erro.message
+        result.innerHTML = `
+          <h2>${dados.game_name || "Meu Jogo"}</h2>
+          <p>${dados.description || ""}</p>
+        `;
+
+        if (Array.isArray(dados.scripts)) {
+          dados.scripts.forEach(script => {
+
+            result.innerHTML += `
+              <h3>${script.name || "Script"}</h3>
+              <p>
+                <b>Local:</b>
+                ${script.location || "ServerScriptService"}
+              </p>
+
+              <pre>${script.code || ""}</pre>
+            `;
+          });
+        }
+
+      } catch (erro) {
+
+        status.textContent =
+          "❌ Erro: " + erro.message;
+
+      } finally {
+
+        button.disabled = false;
+      }
     });
-  }
-};
+  </script>
+
+</body>
+</html>
