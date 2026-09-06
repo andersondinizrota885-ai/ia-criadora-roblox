@@ -1,504 +1,1013 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Roblox AI Studio V3</title>
-
-  <style>
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b0d12;
-      color: #ffffff;
-      min-height: 100vh;
-    }
-
-    button,
-    textarea,
-    input {
-      font: inherit;
-    }
-
-    .header {
-      height: 64px;
-      background: #11151d;
-      border-bottom: 1px solid #252b38;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      gap: 14px;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-
-    .logo {
-      font-size: 20px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .logo span {
-      color: #7c5cff;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-    }
-
-    button {
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      background: #202633;
-      color: white;
-      cursor: pointer;
-      font-weight: 700;
-      transition: .2s;
-      white-space: nowrap;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      background: #2b3343;
-    }
-
-    .primary {
-      background: #6d4aff;
-    }
-
-    .primary:hover {
-      background: #8063ff;
-    }
-
-    .danger {
-      background: #9d3040;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 230px 1fr 260px;
-      min-height: calc(100vh - 64px);
-    }
-
-    .panel {
-      background: #11151d;
-      border-right: 1px solid #252b38;
-      padding: 14px;
-    }
-
-    .right {
-      border-right: 0;
-      border-left: 1px solid #252b38;
-    }
-
-    .panel-title {
-      font-size: 13px;
-      color: #9da6b8;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      font-weight: 800;
-    }
-
-    .tree {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    .tree-item {
-      padding: 9px;
-      border-radius: 7px;
-      background: #171c25;
-      font-size: 13px;
-    }
-
-    .tree-item:hover {
-      background: #202633;
-    }
-
-    .main {
-      padding: 22px;
-      overflow: auto;
-    }
-
-    .hero {
-      background:
-        linear-gradient(
-          135deg,
-          #151a29,
-          #11151d
-        );
-
-      border: 1px solid #272e3d;
-      border-radius: 14px;
-      padding: 22px;
-      margin-bottom: 18px;
-    }
-
-    .hero h1 {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .hero p {
-      color: #9da6b8;
-      line-height: 1.5;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 150px;
-      resize: vertical;
-      background: #0c1017;
-      border: 1px solid #303849;
-      border-radius: 10px;
-      color: white;
-      padding: 14px;
-      outline: none;
-      margin-top: 16px;
-    }
-
-    textarea:focus {
-      border-color: #755cff;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .quick {
-      margin-top: 12px;
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-
-    .quick button {
-      background: #171c25;
-      border: 1px solid #2b3343;
-      font-size: 12px;
-    }
-
-    .status {
-      margin-top: 14px;
-      color: #9da6b8;
-      font-size: 14px;
-    }
-
-    .loading {
-      display: none;
-      margin-top: 15px;
-    }
-
-    .loading.active {
-      display: block;
-    }
-
-    .bar {
-      width: 100%;
-      height: 7px;
-      background: #222936;
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .bar div {
-      width: 40%;
-      height: 100%;
-      background: #7c5cff;
-      animation: load 1s infinite alternate;
-    }
-
-    @keyframes load {
-      from {
-        transform: translateX(-100%);
-      }
-
-      to {
-        transform: translateX(250%);
-      }
-    }
-
-    .result {
-      display: none;
-    }
-
-    .result.active {
-      display: block;
-    }
-
-    .game-header {
-      background: #151a24;
-      border: 1px solid #292f3d;
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 14px;
-    }
-
-    .game-header h2 {
-      margin-bottom: 7px;
-    }
-
-    .muted {
-      color: #9da6b8;
-      line-height: 1.5;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .card {
-      background: #11151d;
-      border: 1px solid #292f3d;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .card h3 {
-      margin-bottom: 10px;
-      color: #b9adff;
-    }
-
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .list-item {
-      background: #171c25;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 13px;
-    }
-
-    .code-box {
-      margin-top: 10px;
-      background: #080a0f;
-      border: 1px solid #272e3d;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .code-title {
-      background: #171c25;
-      padding: 9px 11px;
-      font-size: 12px;
-      color: #aeb7c8;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      padding: 12px;
-      font-family: monospace;
-      font-size: 12px;
-      color: #dfe4ee;
-      max-height: 400px;
-      overflow: auto;
-    }
-
-    .stat {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px;
-      background: #171c25;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-
-    .mobile-tools {
-      display: none;
-    }
-
-    @media (max-width: 1000px) {
-
-      .layout {
-        grid-template-columns: 190px 1fr;
-      }
-
-      .right {
-        display: none;
-      }
-
-    }
-
-    @media (max-width: 700px) {
-
-      .header {
-        height: auto;
-        min-height: 60px;
-        flex-wrap: wrap;
-        padding: 10px;
-      }
-
-      .toolbar {
-        width: 100%;
-      }
-
-      .layout {
-        display: block;
-      }
-
-      .left {
-        display: none;
-      }
-
-      .main {
-        padding: 12px;
-      }
-
-      .hero {
-        padding: 15px;
-      }
-
-      .hero h1 {
-        font-size: 23px;
-      }
-
-      .cards {
-        grid-template-columns: 1fr;
-      }
-
-      .actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .actions button {
-        width: 100%;
-      }
-
-    }
-
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Roblox AI Studio</title>
+
+<style>
+:root {
+  --bg: #080a0f;
+  --panel: #0d1017;
+  --panel2: #11151e;
+  --border: #202634;
+  --text: #f4f6fb;
+  --muted: #8d96a8;
+  --purple: #7657ff;
+  --purple2: #9b86ff;
+  --green: #38d996;
+  --yellow: #f4c95d;
+  --red: #ff6374;
+  --blue: #4da3ff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -20%, #1d1740 0%, transparent 45%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 64px 1fr;
+}
+
+/* HEADER */
+
+.header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,12,18,.88);
+  backdrop-filter: blur(16px);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+
+  display: grid;
+  place-items: center;
+
+  background:
+    linear-gradient(135deg,#8167ff,#5437e8);
+
+  box-shadow:
+    0 0 30px rgba(118,87,255,.3);
+
+  font-size: 18px;
+}
+
+.brand-title {
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.brand-title span {
+  color: var(--purple2);
+}
+
+.brand-sub {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  background: #171c26;
+  border: 1px solid var(--border);
+  color: var(--text);
+
+  padding: 9px 13px;
+  border-radius: 9px;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  transition: .18s;
+}
+
+.btn:hover {
+  background: #202735;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--purple),
+    #5a3de0
+  );
+
+  border-color: transparent;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(
+    135deg,
+    #886fff,
+    #6749eb
+  );
+}
+
+/* WORKSPACE */
+
+.workspace {
+  display: grid;
+  grid-template-columns: 230px minmax(0,1fr) 300px;
+  min-height: calc(100vh - 64px);
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  background: rgba(13,16,23,.9);
+  border-right: 1px solid var(--border);
+  padding: 18px 12px;
+}
+
+.sidebar.right {
+  border-right: 0;
+  border-left: 1px solid var(--border);
+}
+
+.section-title {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+
+  padding: 0 8px;
+  margin: 10px 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  color: #bac2d2;
+
+  padding: 10px 11px;
+  border-radius: 9px;
+
+  font-size: 13px;
+}
+
+.nav-item:hover {
+  background: #151a23;
+  color: white;
+}
+
+.nav-item.active {
+  background: rgba(118,87,255,.13);
+  color: #bdb0ff;
+}
+
+.project-box {
+  margin-top: 20px;
+
+  background: #10141c;
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.project-label {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.project-name {
+  margin-top: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+/* MAIN */
+
+.main {
+  min-width: 0;
+  overflow: auto;
+  padding: 28px;
+}
+
+.hero {
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+.hero-top {
+  text-align: center;
+  padding: 35px 20px 25px;
+}
+
+.ai-icon {
+  width: 54px;
+  height: 54px;
+
+  margin: 0 auto 17px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(135deg,#8064ff,#4c34d5);
+
+  box-shadow:
+    0 0 50px rgba(118,87,255,.3);
+
+  font-size: 25px;
+}
+
+.hero h1 {
+  font-size: clamp(28px,4vw,44px);
+  letter-spacing: -1.5px;
+}
+
+.hero h1 span {
+  background:
+    linear-gradient(90deg,#a895ff,#7155ff);
+
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero p {
+  color: var(--muted);
+  margin-top: 11px;
+  line-height: 1.6;
+}
+
+/* PROMPT */
+
+.prompt-box {
+  margin-top: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20,24,35,.98),
+      rgba(12,15,22,.98)
+    );
+
+  border: 1px solid #2a3040;
+  border-radius: 16px;
+
+  padding: 15px;
+
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.25);
+}
+
+textarea {
+  width: 100%;
+  min-height: 150px;
+
+  resize: vertical;
+
+  background: transparent;
+  border: 0;
+  outline: 0;
+
+  color: white;
+
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+textarea::placeholder {
+  color: #626b7d;
+}
+
+.prompt-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 10px;
+}
+
+.quick {
+  display: flex;
+  gap: 6px;
+
+  overflow-x: auto;
+}
+
+.quick button {
+  flex: 0 0 auto;
+
+  background: #171c26;
+  color: #aeb7c8;
+
+  border: 1px solid var(--border);
+
+  padding: 7px 10px;
+  border-radius: 8px;
+
+  font-size: 11px;
+}
+
+.quick button:hover {
+  color: white;
+  border-color: #41377a;
+}
+
+.generate {
+  flex: 0 0 auto;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--purple),
+      #5537e1
+    );
+
+  color: white;
+
+  padding: 11px 18px;
+  border-radius: 10px;
+
+  font-weight: 800;
+}
+
+/* STATUS */
+
+.status-panel {
+  margin-top: 14px;
+
+  display: none;
+
+  background: #0d1118;
+  border: 1px solid var(--border);
+
+  border-radius: 13px;
+  padding: 13px;
+}
+
+.status-panel.active {
+  display: block;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+
+  background: var(--purple);
+  box-shadow: 0 0 14px var(--purple);
+}
+
+.progress {
+  margin-top: 10px;
+
+  height: 5px;
+
+  overflow: hidden;
+  border-radius: 10px;
+
+  background: #1c222d;
+}
+
+.progress div {
+  width: 35%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--purple),
+      #a493ff
+    );
+
+  animation: progress 1.5s infinite ease-in-out;
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(310%);
+  }
+}
+
+/* RESULTS */
+
+.results {
+  display: none;
+  margin-top: 25px;
+}
+
+.results.active {
+  display: block;
+}
+
+.game-card {
+  background: #0d1118;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.game-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.game-title h2 {
+  font-size: 21px;
+}
+
+.game-description {
+  color: var(--muted);
+  margin-top: 7px;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  margin-top: 14px;
+}
+
+.tag {
+  background: #171c26;
+  border: 1px solid var(--border);
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  color: #b9c1d1;
+  font-size: 10px;
+}
+
+/* QUALITY */
+
+.quality {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 8px;
+
+  margin-top: 15px;
+}
+
+.quality-box {
+  background: #11161f;
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+  padding: 11px;
+}
+
+.quality-label {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.quality-value {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.good {
+  color: var(--green);
+}
+
+.warning {
+  color: var(--yellow);
+}
+
+.bad {
+  color: var(--red);
+}
+
+/* SCRIPTS */
+
+.scripts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin: 25px 0 10px;
+}
+
+.scripts-header h2 {
+  font-size: 17px;
+}
+
+.script-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.script {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #0d1118;
+
+  overflow: hidden;
+}
+
+.script-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 14px;
+
+  cursor: pointer;
+}
+
+.script-head:hover {
+  background: #111620;
+}
+
+.script-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.script-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  margin-top: 5px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 4px 7px;
+
+  border-radius: 6px;
+
+  background: #171c26;
+
+  color: #9da7ba;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.badge.green {
+  color: var(--green);
+  background: rgba(56,217,150,.08);
+}
+
+.badge.yellow {
+  color: var(--yellow);
+  background: rgba(244,201,93,.08);
+}
+
+.badge.red {
+  color: var(--red);
+  background: rgba(255,99,116,.08);
+}
+
+.script-body {
+  display: none;
+
+  border-top: 1px solid var(--border);
+
+  padding: 14px;
+}
+
+.script.open .script-body {
+  display: block;
+}
+
+.script-description {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+
+  margin-bottom: 12px;
+}
+
+.code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: #080b10;
+
+  border: 1px solid #242a37;
+  border-bottom: 0;
+
+  padding: 7px 9px;
+}
+
+.code-toolbar span {
+  color: #697385;
+  font-size: 10px;
+}
+
+.copy {
+  background: #171c26;
+  color: #c7cfdd;
+
+  padding: 6px 9px;
+  border-radius: 6px;
+
+  font-size: 10px;
+}
+
+pre {
+  margin: 0;
+
+  background: #07090d;
+
+  border: 1px solid #242a37;
+
+  padding: 15px;
+
+  overflow: auto;
+
+  max-height: 470px;
+
+  color: #dce2ed;
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+/* RIGHT */
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.stat {
+  background: #11161f;
+  border: 1px solid var(--border);
+
+  border-radius: 9px;
+
+  padding: 10px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.stat-value {
+  font-size: 17px;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.ai-status {
+  margin-top: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(118,87,255,.12),
+      rgba(13,16,23,.8)
+    );
+
+  border: 1px solid #30285d;
+
+  border-radius: 12px;
+
+  padding: 13px;
+}
+
+.ai-status-title {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-status p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+
+  margin-top: 7px;
+}
+
+.dot-online {
+  display: inline-block;
+
+  width: 7px;
+  height: 7px;
+
+  background: var(--green);
+  border-radius: 50%;
+
+  box-shadow: 0 0 10px var(--green);
+
+  margin-right: 5px;
+}
+
+/* MOBILE */
+
+@media(max-width:1050px) {
+  .workspace {
+    grid-template-columns: 190px minmax(0,1fr);
+  }
+
+  .right {
+    display: none;
+  }
+}
+
+@media(max-width:700px) {
+  .app {
+    grid-template-rows: auto 1fr;
+  }
+
+  .header {
+    min-height: 60px;
+    padding: 9px 12px;
+  }
+
+  .header-actions .btn:not(.btn-primary) {
+    display: none;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .left {
+    display: none;
+  }
+
+  .main {
+    padding: 12px;
+  }
+
+  .hero-top {
+    padding: 25px 10px 15px;
+  }
+
+  .prompt-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .generate {
+    width: 100%;
+  }
+
+  .quality {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 </head>
 
 <body>
 
+<div class="app">
+
 <header class="header">
 
-  <div class="logo">
-    Roblox <span>AI Studio</span>
+  <div class="brand">
+
+    <div class="logo">
+      🤖
+    </div>
+
+    <div>
+      <div class="brand-title">
+        Roblox <span>AI Studio</span>
+      </div>
+
+      <div class="brand-sub">
+        AI Game & Script Engine
+      </div>
+    </div>
+
   </div>
 
-  <div class="toolbar">
+  <div class="header-actions">
 
-    <button onclick="novoProjeto()">
-      🆕 Novo
+    <button class="btn"
+      onclick="novoProjeto()">
+      ＋ Novo
     </button>
 
-    <button
-      class="primary"
-      onclick="gerarJogo()"
-    >
-      🤖 Gerar Jogo
+    <button class="btn"
+      onclick="baixarScripts()">
+      ↓ Scripts
     </button>
 
-    <button onclick="baixarRBXLX()">
-      📦 RBXLX
-    </button>
-
-    <button onclick="baixarBuilder()">
-      🧱 Builder
-    </button>
-
-    <button onclick="baixarScripts()">
-      📜 Scripts
-    </button>
-
-    <button onclick="limpar()">
-      🗑️ Limpar
+    <button class="btn btn-primary"
+      onclick="gerarJogo()">
+      ✦ Gerar
     </button>
 
   </div>
 
 </header>
 
-<div class="layout">
+<div class="workspace">
 
-  <!-- EXPLORER -->
+<!-- LEFT -->
 
-  <aside class="panel left">
+<aside class="sidebar left">
 
-    <div class="panel-title">
-      Explorer
+  <div class="section-title">
+    Workspace
+  </div>
+
+  <div class="nav">
+
+    <div class="nav-item active">
+      🤖
+      Criador IA
     </div>
 
-    <div class="tree">
-
-      <div class="tree-item">
-        📁 Workspace
-      </div>
-
-      <div class="tree-item">
-        📁 ReplicatedStorage
-      </div>
-
-      <div class="tree-item">
-        📁 ServerScriptService
-      </div>
-
-      <div class="tree-item">
-        📁 ServerStorage
-      </div>
-
-      <div class="tree-item">
-        📁 StarterGui
-      </div>
-
-      <div class="tree-item">
-        📁 StarterPlayer
-      </div>
-
+    <div class="nav-item">
+      🧠
+      Planejamento
     </div>
 
-  </aside>
+    <div class="nav-item">
+      📜
+      Scripts
+    </div>
 
-  <!-- CENTRO -->
+    <div class="nav-item">
+      🧪
+      Verificação
+    </div>
 
-  <main class="main">
+  </div>
 
-    <section class="hero">
+  <div class="section-title">
+    Roblox
+  </div>
 
-      <h1>
-        🚀 Criador de Jogos com IA
-      </h1>
+  <div class="nav">
 
-      <p>
-        Descreva seu jogo e a IA vai criar
-        mapa, sistemas, NPCs, missões,
-        itens, pets, scripts e Builder.
-      </p>
+    <div class="nav-item">
+      📁 Workspace
+    </div>
 
-      <textarea
-        id="ideia"
-        placeholder="Exemplo: Crie um jogo onde os jogadores começam em uma ilha, coletam recursos, enfrentam monstros, compram pets, evoluem de nível e enfrentam um boss gigante..."
-      ></textarea>
+    <div class="nav-item">
+      📁 ReplicatedStorage
+    </div>
+
+    <div class="nav-item">
+      📁 ServerScriptService
+    </div>
+
+    <div class="nav-item">
+      📁 ServerStorage
+    </div>
+
+    <div class="nav-item">
+      📁 StarterGui
+    </div>
+
+    <div class="nav-item">
+      📁 StarterPlayer
+    </div>
+
+  </div>
+
+  <div class="project-box">
+
+    <div class="project-label">
+      Projeto atual
+    </div>
+
+    <div id="projectName"
+      class="project-name">
+      Nenhum projeto
+    </div>
+
+  </div>
+
+</aside>
+
+<!-- MAIN -->
+
+<main class="main">
+
+<div class="hero">
+
+  <div class="hero-top">
+
+    <div class="ai-icon">
+      ✦
+    </div>
+
+    <h1>
+      Crie seu jogo com
+      <span>IA</span>
+    </h1>
+
+    <p>
+      Descreva sua ideia. A IA planeja o projeto,
+      cria os scripts, revisa o código e tenta
+      corrigir problemas automaticamente.
+    </p>
+
+  </div>
+
+  <div class="prompt-box">
+
+    <textarea
+      id="ideia"
+      placeholder="Exemplo: Crie um jogo de aventura onde os jogadores começam em uma ilha, coletam recursos, enfrentam monstros, possuem pets, evoluem e enfrentam um boss..."
+    ></textarea>
+
+    <div class="prompt-bottom">
 
       <div class="quick">
 
@@ -523,122 +1032,176 @@
         </button>
 
         <button onclick="ideiaRapida('pet simulator')">
-          🐶 Pets
+          🐾 Pets
         </button>
 
       </div>
 
-      <div class="actions">
+      <button
+        class="generate"
+        onclick="gerarJogo()">
 
-        <button
-          class="primary"
-          onclick="gerarJogo()"
-        >
-          🚀 CRIAR JOGO COMPLETO
-        </button>
+        ✦ Criar jogo
 
-        <button onclick="expandirJogo()">
-          🧠 EXPANDIR JOGO
-        </button>
-
-      </div>
-
-      <div
-        id="status"
-        class="status"
-      >
-        Pronto para criar.
-      </div>
-
-      <div
-        id="loading"
-        class="loading"
-      >
-
-        <div class="bar">
-          <div></div>
-        </div>
-
-        <p class="status">
-          A IA está construindo seu projeto...
-        </p>
-
-      </div>
-
-    </section>
-
-    <section
-      id="result"
-      class="result"
-    >
-
-      <div
-        id="gameHeader"
-        class="game-header"
-      ></div>
-
-      <div
-        id="cards"
-        class="cards"
-      ></div>
-
-    </section>
-
-  </main>
-
-  <!-- PROPERTIES -->
-
-  <aside class="panel right">
-
-    <div class="panel-title">
-      Properties
-    </div>
-
-    <div id="properties">
-
-      <div class="stat">
-        <span>Objetos</span>
-        <b id="countObjects">0</b>
-      </div>
-
-      <div class="stat">
-        <span>NPCs</span>
-        <b id="countNPCs">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Sistemas</span>
-        <b id="countSystems">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Missões</span>
-        <b id="countQuests">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Itens</span>
-        <b id="countItems">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Pets</span>
-        <b id="countPets">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Scripts</span>
-        <b id="countScripts">0</b>
-      </div>
-
-      <div class="stat">
-        <span>Remotes</span>
-        <b id="countRemotes">0</b>
-      </div>
+      </button>
 
     </div>
 
-  </aside>
+  </div>
+
+  <div
+    id="statusPanel"
+    class="status-panel">
+
+    <div class="status-row">
+
+      <span class="status-dot"></span>
+
+      <span id="statusText">
+        Preparando IA...
+      </span>
+
+    </div>
+
+    <div class="progress">
+      <div></div>
+    </div>
+
+  </div>
+
+  <section
+    id="results"
+    class="results">
+
+    <div
+      id="gameHeader"
+      class="game-card">
+    </div>
+
+    <div
+      class="scripts-header">
+
+      <h2>
+        Scripts gerados
+      </h2>
+
+      <button
+        class="btn"
+        onclick="baixarScripts()">
+
+        ↓ Exportar
+
+      </button>
+
+    </div>
+
+    <div
+      id="scriptList"
+      class="script-list">
+    </div>
+
+  </section>
+
+</div>
+
+</main>
+
+<!-- RIGHT -->
+
+<aside class="sidebar right">
+
+  <div class="section-title">
+    Projeto
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+      <div class="stat-label">
+        Objetos
+      </div>
+      <div
+        id="countObjects"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">
+        NPCs
+      </div>
+      <div
+        id="countNPCs"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">
+        Sistemas
+      </div>
+      <div
+        id="countSystems"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">
+        Scripts
+      </div>
+      <div
+        id="countScripts"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">
+        Quests
+      </div>
+      <div
+        id="countQuests"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">
+        Pets
+      </div>
+      <div
+        id="countPets"
+        class="stat-value">
+        0
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ai-status">
+
+    <div class="ai-status-title">
+      <span class="dot-online"></span>
+      IA Engine online
+    </div>
+
+    <p>
+      Pipeline ativo:
+      planejamento → geração →
+      revisão → autocorreção.
+    </p>
+
+  </div>
+
+</aside>
+
+</div>
 
 </div>
 
@@ -646,25 +1209,14 @@
 
 let projetoAtual = null;
 
-function escapeHTML(valor) {
+function escapeHTML(value) {
 
-  return String(valor ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-function xmlEscape(valor) {
-
-  return String(valor ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
 }
 
@@ -689,6 +1241,7 @@ function ideiaRapida(tipo) {
 
     "pet simulator":
       "Crie um pet simulator onde os jogadores coletam moedas, chocam ovos, conseguem pets de várias raridades, desbloqueiam mundos e evoluem."
+
   };
 
   document.getElementById("ideia").value =
@@ -699,7 +1252,9 @@ function ideiaRapida(tipo) {
 async function gerarJogo(modo = "jogo_completo") {
 
   const ideia =
-    document.getElementById("ideia").value.trim();
+    document.getElementById("ideia")
+      .value
+      .trim();
 
   if (!ideia) {
 
@@ -708,42 +1263,51 @@ async function gerarJogo(modo = "jogo_completo") {
     );
 
     return;
-
   }
 
-  const status =
-    document.getElementById("status");
+  const statusPanel =
+    document.getElementById(
+      "statusPanel"
+    );
 
-  const loading =
-    document.getElementById("loading");
+  const statusText =
+    document.getElementById(
+      "statusText"
+    );
 
-  status.textContent =
-    "Enviando projeto para a IA...";
+  statusPanel.classList.add("active");
 
-  loading.classList.add("active");
+  statusText.textContent =
+    "Planejando seu jogo...";
 
   document
-    .getElementById("result")
+    .getElementById("results")
     .classList.remove("active");
 
   try {
 
+    await esperar(400);
+
+    statusText.textContent =
+      "Criando arquitetura do projeto...";
+
     const resposta =
-      await fetch("/api/criar-jogo", {
+      await fetch(
+        "/api/criar-jogo",
+        {
+          method: "POST",
 
-        method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body: JSON.stringify({
-          ideia,
-          modo
-        })
-
-      });
+          body: JSON.stringify({
+            ideia,
+            modo
+          })
+        }
+      );
 
     const dados =
       await resposta.json();
@@ -751,378 +1315,428 @@ async function gerarJogo(modo = "jogo_completo") {
     if (!resposta.ok) {
 
       throw new Error(
+        dados.erro ||
         dados.error ||
-        "Erro ao gerar o jogo."
+        "Erro ao gerar o projeto."
       );
 
     }
 
-    projetoAtual = dados;
+    statusText.textContent =
+      "Revisando scripts...";
 
-    mostrarProjeto(dados);
+    await esperar(350);
 
-    status.textContent =
-      "✅ Jogo criado com sucesso!";
+    projetoAtual =
+      dados.projeto || dados;
+
+    mostrarProjeto(
+      projetoAtual
+    );
+
+    statusText.textContent =
+      "Projeto criado e analisado.";
 
   } catch (erro) {
 
     console.error(erro);
 
-    status.textContent =
-      "❌ " + erro.message;
+    statusText.textContent =
+      "Erro: " +
+      erro.message;
 
     alert(
-      "Erro ao criar o jogo:\n\n" +
+      "Não foi possível criar o projeto:\n\n" +
       erro.message
     );
 
   } finally {
 
-    loading.classList.remove("active");
+    setTimeout(() => {
+
+      statusPanel.classList.remove(
+        "active"
+      );
+
+    }, 900);
 
   }
+
+}
+
+function esperar(ms) {
+
+  return new Promise(
+    resolve =>
+      setTimeout(resolve,ms)
+  );
 
 }
 
 function mostrarProjeto(p) {
 
   document
-    .getElementById("result")
+    .getElementById("results")
     .classList.add("active");
+
+  const nome =
+    p.title ||
+    p.game_name ||
+    "Meu jogo Roblox";
+
+  document
+    .getElementById("projectName")
+    .textContent =
+    nome;
+
+  const scripts =
+    Array.isArray(p.scripts)
+      ? p.scripts
+      : [];
+
+  const quality =
+    p.quality || {};
 
   document
     .getElementById("gameHeader")
     .innerHTML = `
 
-      <h2>
-        🎮 ${escapeHTML(p.game_name)}
-      </h2>
+      <div class="game-title">
 
-      <p class="muted">
-        ${escapeHTML(p.description)}
-      </p>
+        <div>
 
-      <br>
+          <h2>
+            🎮 ${escapeHTML(nome)}
+          </h2>
 
-      <p>
-        <b>Gênero:</b>
-        ${escapeHTML(p.genre)}
-      </p>
+          <p class="game-description">
+            ${escapeHTML(
+              p.description ||
+              p.objective ||
+              "Projeto criado pela IA."
+            )}
+          </p>
 
-      <p>
-        <b>Objetivo:</b>
-        ${escapeHTML(p.objective)}
-      </p>
+        </div>
 
-      <p>
-        <b>Dificuldade:</b>
-        ${escapeHTML(p.difficulty)}
-      </p>
+      </div>
 
-      <p>
-        <b>Jogadores:</b>
-        ${escapeHTML(p.estimated_players)}
-      </p>
+      <div class="tags">
 
+        <span class="tag">
+          ${escapeHTML(
+            p.genre || "Roblox"
+          )}
+        </span>
+
+        <span class="tag">
+          ${escapeHTML(
+            p.difficulty || "Médio"
+          )}
+        </span>
+
+        <span class="tag">
+          👥 ${escapeHTML(
+            p.players ||
+            p.estimated_players ||
+            "10"
+          )}
+        </span>
+
+        <span class="tag">
+          🧠 Engine 2.0
+        </span>
+
+      </div>
+
+      <div class="quality">
+
+        <div class="quality-box">
+
+          <div class="quality-label">
+            SCRIPTS
+          </div>
+
+          <div class="quality-value">
+            ${scripts.length}
+          </div>
+
+        </div>
+
+        <div class="quality-box">
+
+          <div class="quality-label">
+            APROVADOS
+          </div>
+
+          <div class="quality-value good">
+            ${quality.approved_scripts || 0}
+          </div>
+
+        </div>
+
+        <div class="quality-box">
+
+          <div class="quality-label">
+            SCORE
+          </div>
+
+          <div class="quality-value ${
+            (quality.average_score || 0) >= 80
+              ? "good"
+              : "warning"
+          }">
+
+            ${quality.average_score || 0}%
+
+          </div>
+
+        </div>
+
+      </div>
     `;
 
-  const cards =
-    document.getElementById("cards");
+  atualizarEstatisticas(p);
 
-  cards.innerHTML = "";
+  renderScripts(scripts);
 
-  criarCard(
-    cards,
-    "🗺️ MAPA",
-    mapaHTML(p)
-  );
+}
 
-  criarCard(
-    cards,
-    "🧱 OBJETOS",
-    listaHTML(
-      p.objects,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        ${escapeHTML(item.description)}
-        <br>
-        Posição: ${escapeHTML(
-          JSON.stringify(item.position)
-        )}`
-    )
-  );
+function renderScripts(scripts) {
 
-  criarCard(
-    cards,
-    "🤖 NPCs",
-    listaHTML(
-      p.npcs,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        Tipo: ${escapeHTML(item.type)}
-        <br>
-        Vida: ${escapeHTML(item.health)}
-        <br>
-        Dano: ${escapeHTML(item.damage)}
-        <br>
-        ${escapeHTML(item.description)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "⚙️ SISTEMAS",
-    listaHTML(
-      p.systems,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        ${escapeHTML(item.description)}
-        <br>
-        Prioridade:
-        ${escapeHTML(item.priority)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🎯 MISSÕES",
-    listaHTML(
-      p.quests,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        ${escapeHTML(item.description)}
-        <br>
-        Objetivo:
-        ${escapeHTML(item.objective)}
-        <br>
-        Recompensa:
-        ${escapeHTML(item.reward)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🎒 ITENS",
-    listaHTML(
-      p.items,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        Tipo: ${escapeHTML(item.type)}
-        <br>
-        Preço: ${escapeHTML(item.price)}
-        <br>
-        ${escapeHTML(item.description)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🛒 LOJAS",
-    listaHTML(
-      p.shops,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        ${escapeHTML(item.description)}
-        <br>
-        Itens:
-        ${escapeHTML(
-          (item.items || []).join(", ")
-        )}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🐾 PETS",
-    listaHTML(
-      p.pets,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        Raridade:
-        ${escapeHTML(item.rarity)}
-        <br>
-        ${escapeHTML(item.description)}
-        <br>
-        Bônus:
-        ${escapeHTML(item.bonus)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🔌 REMOTES",
-    listaHTML(
-      p.recommended_remotes,
-      item =>
-        `<b>${escapeHTML(item.name)}</b>
-        <br>
-        Tipo:
-        ${escapeHTML(item.type)}
-        <br>
-        ${escapeHTML(item.description)}`
-    )
-  );
-
-  criarCard(
-    cards,
-    "🧱 BUILDER",
-    codigoHTML(
-      p.builder_script?.name ||
-        "MapBuilder",
-      p.builder_script?.code ||
-        "-- Nenhum builder."
-    )
-  );
-
-  (p.scripts || []).forEach(script => {
-
-    criarCard(
-      cards,
-      "📜 " +
-        escapeHTML(script.name),
-
-      `
-        <p class="muted">
-          Local:
-          ${escapeHTML(script.location)}
-          <br>
-          Tipo:
-          ${escapeHTML(script.type)}
-          <br>
-          ${escapeHTML(script.description)}
-        </p>
-
-        ${codigoHTML(
-          script.name,
-          script.code
-        )}
-      `
+  const container =
+    document.getElementById(
+      "scriptList"
     );
 
-  });
+  container.innerHTML = "";
 
-  criarCard(
-    cards,
-    "📋 PASSOS",
-    listaHTML(
-      p.steps,
-      item => escapeHTML(item)
-    )
-  );
+  if (!scripts.length) {
 
-  criarCard(
-    cards,
-    "🚀 PRÓXIMOS UPGRADES",
-    listaHTML(
-      p.future_upgrades,
-      item => escapeHTML(item)
-    )
-  );
+    container.innerHTML = `
 
-  atualizarPropriedades(p);
+      <div class="game-card">
 
-}
+        <p class="game-description">
+          Nenhum script foi gerado.
+        </p>
 
-function criarCard(container, titulo, conteudo) {
-
-  const div =
-    document.createElement("div");
-
-  div.className = "card";
-
-  div.innerHTML = `
-    <h3>${titulo}</h3>
-    ${conteudo}
-  `;
-
-  container.appendChild(div);
-
-}
-
-function listaHTML(lista, render) {
-
-  if (!Array.isArray(lista) ||
-      lista.length === 0) {
-
-    return `
-      <p class="muted">
-        Nenhum item gerado.
-      </p>
+      </div>
     `;
+
+    return;
+  }
+
+  scripts.forEach(
+    (script,index) => {
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+      div.className =
+        "script";
+
+      const quality =
+        script.quality || {};
+
+      const approved =
+        quality.status ===
+        "approved";
+
+      const score =
+        Number(
+          quality.score || 0
+        );
+
+      const statusClass =
+        approved
+          ? "green"
+          : score >= 70
+            ? "yellow"
+            : "red";
+
+      const statusText =
+        approved
+          ? "APROVADO"
+          : "REVISAR";
+
+      div.innerHTML = `
+
+        <div
+          class="script-head"
+          onclick="toggleScript(this.parentElement)"
+        >
+
+          <div>
+
+            <div class="script-name">
+
+              <span>
+                ${
+                  script.type ===
+                  "LocalScript"
+                    ? "🖥️"
+                    : script.type ===
+                      "ModuleScript"
+                      ? "📦"
+                      : "⚙️"
+                }
+              </span>
+
+              ${escapeHTML(
+                script.name ||
+                "Script " +
+                (index + 1)
+              )}
+
+            </div>
+
+            <div class="script-meta">
+
+              <span class="badge">
+                ${escapeHTML(
+                  script.type ||
+                  "Script"
+                )}
+              </span>
+
+              <span class="badge">
+                ${escapeHTML(
+                  script.location ||
+                  "ServerScriptService"
+                )}
+              </span>
+
+              <span class="badge ${statusClass}">
+                ${statusText}
+              </span>
+
+              <span class="badge">
+                ${score}%
+              </span>
+
+            </div>
+
+          </div>
+
+          <span>
+            ›
+          </span>
+
+        </div>
+
+        <div class="script-body">
+
+          <div class="script-description">
+
+            ${
+              escapeHTML(
+                script.description ||
+                script.purpose ||
+                "Sem descrição."
+              )
+            }
+
+            ${
+              script.dependencies?.length
+                ? `
+                  <br><br>
+                  <b>Dependências:</b>
+                  ${escapeHTML(
+                    script.dependencies.join(
+                      ", "
+                    )
+                  )}
+                `
+                : ""
+            }
+
+          </div>
+
+          <div class="code-toolbar">
+
+            <span>
+              ${escapeHTML(
+                script.name
+              )}.lua
+            </span>
+
+            <button
+              class="copy"
+              onclick="copiarCodigo(event, ${index})">
+
+              Copiar
+
+            </button>
+
+          </div>
+
+          <pre>${escapeHTML(
+            script.code ||
+            "-- Sem código"
+          )}</pre>
+
+        </div>
+      `;
+
+      container.appendChild(
+        div
+      );
+
+    }
+  );
+
+}
+
+function toggleScript(element) {
+
+  element.classList.toggle(
+    "open"
+  );
+
+}
+
+async function copiarCodigo(
+  event,
+  index
+) {
+
+  event.stopPropagation();
+
+  const script =
+    projetoAtual?.scripts?.[index];
+
+  if (!script) return;
+
+  try {
+
+    await navigator.clipboard.writeText(
+      script.code || ""
+    );
+
+    event.target.textContent =
+      "Copiado!";
+
+    setTimeout(() => {
+
+      event.target.textContent =
+        "Copiar";
+
+    },1200);
+
+  } catch {
+
+    alert(
+      "Não foi possível copiar o código."
+    );
 
   }
 
-  return `
-    <div class="list">
-      ${lista.map(item => `
-        <div class="list-item">
-          ${render(item)}
-        </div>
-      `).join("")}
-    </div>
-  `;
-
 }
 
-function mapaHTML(p) {
-
-  const areas =
-    p.map?.areas || [];
-
-  return `
-
-    <p class="muted">
-      ${escapeHTML(
-        p.map?.description ||
-        "Mapa gerado pela IA."
-      )}
-    </p>
-
-    <br>
-
-    ${listaHTML(
-      areas,
-      area =>
-        `<b>${escapeHTML(area.name)}</b>
-        <br>
-        Tipo:
-        ${escapeHTML(area.type)}
-        <br>
-        ${escapeHTML(area.description)}`
-    )}
-
-  `;
-
-}
-
-function codigoHTML(nome, codigo) {
-
-  return `
-
-    <div class="code-box">
-
-      <div class="code-title">
-        ${escapeHTML(nome)}
-      </div>
-
-      <pre>${escapeHTML(
-        codigo || "-- Sem código"
-      )}</pre>
-
-    </div>
-
-  `;
-
-}
-
-function atualizarPropriedades(p) {
+function atualizarEstatisticas(p) {
 
   document.getElementById(
     "countObjects"
@@ -1145,11 +1759,6 @@ function atualizarPropriedades(p) {
     (p.quests || []).length;
 
   document.getElementById(
-    "countItems"
-  ).textContent =
-    (p.items || []).length;
-
-  document.getElementById(
     "countPets"
   ).textContent =
     (p.pets || []).length;
@@ -1158,31 +1767,6 @@ function atualizarPropriedades(p) {
     "countScripts"
   ).textContent =
     (p.scripts || []).length;
-
-  document.getElementById(
-    "countRemotes"
-  ).textContent =
-    (p.recommended_remotes || []).length;
-
-}
-
-function baixarBuilder() {
-
-  if (!projetoAtual) {
-
-    alert(
-      "Crie um jogo primeiro."
-    );
-
-    return;
-
-  }
-
-  baixarArquivo(
-    "MapBuilder.lua",
-    projetoAtual.builder_script?.code ||
-      "-- Builder não disponível."
-  );
 
 }
 
@@ -1195,13 +1779,15 @@ function baixarScripts() {
     );
 
     return;
-
   }
+
+  const scripts =
+    projetoAtual.scripts || [];
 
   let conteudo = "";
 
-  (projetoAtual.scripts || [])
-    .forEach(script => {
+  scripts.forEach(
+    script => {
 
       conteudo +=
         "\n\n" +
@@ -1209,16 +1795,17 @@ function baixarScripts() {
         "-- " +
         script.name +
         "\n" +
-        "-- Local: " +
-        script.location +
-        "\n" +
         "-- Tipo: " +
         script.type +
+        "\n" +
+        "-- Local: " +
+        script.location +
         "\n" +
         "-- ========================================\n\n" +
         (script.code || "");
 
-    });
+    }
+  );
 
   baixarArquivo(
     "RobloxAI_Scripts.lua",
@@ -1227,7 +1814,10 @@ function baixarScripts() {
 
 }
 
-function baixarArquivo(nome, conteudo) {
+function baixarArquivo(
+  nome,
+  conteudo
+) {
 
   const blob =
     new Blob(
@@ -1239,10 +1829,14 @@ function baixarArquivo(nome, conteudo) {
     );
 
   const url =
-    URL.createObjectURL(blob);
+    URL.createObjectURL(
+      blob
+    );
 
   const a =
-    document.createElement("a");
+    document.createElement(
+      "a"
+    );
 
   a.href = url;
   a.download = nome;
@@ -1253,278 +1847,9 @@ function baixarArquivo(nome, conteudo) {
 
   a.remove();
 
-  URL.revokeObjectURL(url);
-
-}
-
-function baixarRBXLX() {
-
-  if (!projetoAtual) {
-
-    alert(
-      "Crie um jogo primeiro."
-    );
-
-    return;
-
-  }
-
-  const xml =
-    gerarRBXLX(projetoAtual);
-
-  baixarArquivo(
-    (projetoAtual.game_name ||
-      "MeuJogo")
-      .replace(/[^a-z0-9]/gi, "_") +
-      ".rbxlx",
-    xml
+  URL.revokeObjectURL(
+    url
   );
-
-}
-
-function gerarRBXLX(p) {
-
-  let instances = "";
-
-  instances += `
-    <Item class="Folder" referent="REF_GENERATED">
-      <Properties>
-        <string name="Name">GeneratedMap</string>
-      </Properties>
-    </Item>
-  `;
-
-  (p.objects || []).forEach(
-    (obj, index) => {
-
-      const pos =
-        Array.isArray(obj.position)
-          ? obj.position
-          : [0, 5, 0];
-
-      const size =
-        Array.isArray(obj.size)
-          ? obj.size
-          : [10, 1, 10];
-
-      instances += `
-        <Item
-          class="Part"
-          referent="PART_${index}"
-        >
-
-          <Properties>
-
-            <string name="Name">
-              ${xmlEscape(
-                obj.name ||
-                "GeneratedPart"
-              )}
-            </string>
-
-            <bool name="Anchored">
-              ${obj.anchored !== false}
-            </bool>
-
-            <bool name="CanCollide">
-              ${obj.can_collide !== false}
-            </bool>
-
-            <Vector3 name="size">
-              <X>${size[0]}</X>
-              <Y>${size[1]}</Y>
-              <Z>${size[2]}</Z>
-            </Vector3>
-
-            <CoordinateFrame name="CFrame">
-              <X>${pos[0]}</X>
-              <Y>${pos[1]}</Y>
-              <Z>${pos[2]}</Z>
-              <R00>1</R00>
-              <R01>0</R01>
-              <R02>0</R02>
-              <R10>0</R10>
-              <R11>1</R11>
-              <R12>0</R12>
-              <R20>0</R20>
-              <R21>0</R21>
-              <R22>1</R22>
-            </CoordinateFrame>
-
-          </Properties>
-
-        </Item>
-      `;
-
-    }
-  );
-
-  let scripts = "";
-
-  (p.scripts || [])
-    .forEach(
-      (script, index) => {
-
-        scripts += `
-          <Item
-            class="${xmlEscape(
-              script.type || "Script"
-            )}"
-            referent="SCRIPT_${index}"
-          >
-
-            <Properties>
-
-              <string name="Name">
-                ${xmlEscape(
-                  script.name ||
-                  "GeneratedScript"
-                )}
-              </string>
-
-              <ProtectedString
-                name="Source"
-              >
-                ${xmlEscape(
-                  script.code ||
-                  "-- Sem código"
-                )}
-              </ProtectedString>
-
-            </Properties>
-
-          </Item>
-        `;
-
-      }
-    );
-
-  const builderCode =
-    p.builder_script?.code ||
-    "-- Builder vazio";
-
-  scripts += `
-    <Item
-      class="Script"
-      referent="BUILDER"
-    >
-
-      <Properties>
-
-        <string name="Name">
-          MapBuilder
-        </string>
-
-        <ProtectedString name="Source">
-          ${xmlEscape(builderCode)}
-        </ProtectedString>
-
-      </Properties>
-
-    </Item>
-  `;
-
-  return `<?xml version="1.0" encoding="utf-8"?>
-
-<roblox
-  version="4"
-  xmlns:xmime="http://www.w3.org/2005/11/xmime"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd"
->
-
-  <Item class="Workspace" referent="WORKSPACE">
-
-    <Properties>
-
-      <string name="Name">
-        Workspace
-      </string>
-
-    </Properties>
-
-    ${instances}
-
-  </Item>
-
-  <Item
-    class="ReplicatedStorage"
-    referent="REPLICATED"
-  >
-
-    <Properties>
-
-      <string name="Name">
-        ReplicatedStorage
-      </string>
-
-    </Properties>
-
-  </Item>
-
-  <Item
-    class="ServerStorage"
-    referent="SERVERSTORAGE"
-  >
-
-    <Properties>
-
-      <string name="Name">
-        ServerStorage
-      </string>
-
-    </Properties>
-
-  </Item>
-
-  <Item
-    class="StarterGui"
-    referent="STARTERGUI"
-  >
-
-    <Properties>
-
-      <string name="Name">
-        StarterGui
-      </string>
-
-    </Properties>
-
-  </Item>
-
-  <Item
-    class="StarterPlayer"
-    referent="STARTERPLAYER"
-  >
-
-    <Properties>
-
-      <string name="Name">
-        StarterPlayer
-      </string>
-
-    </Properties>
-
-  </Item>
-
-  <Item
-    class="ServerScriptService"
-    referent="SERVERSCRIPTS"
-  >
-
-    <Properties>
-
-      <string name="Name">
-        ServerScriptService
-      </string>
-
-    </Properties>
-
-    ${scripts}
-
-  </Item>
-
-</roblox>`;
 
 }
 
@@ -1537,74 +1862,15 @@ function novoProjeto() {
   ).value = "";
 
   document.getElementById(
-    "result"
-  ).classList.remove("active");
+    "results"
+  ).classList.remove(
+    "active"
+  );
 
   document.getElementById(
-    "status"
+    "projectName"
   ).textContent =
-    "Novo projeto criado.";
-
-}
-
-function limpar() {
-
-  novoProjeto();
-
-  const ids = [
-    "countObjects",
-    "countNPCs",
-    "countSystems",
-    "countQuests",
-    "countItems",
-    "countPets",
-    "countScripts",
-    "countRemotes"
-  ];
-
-  ids.forEach(id => {
-
-    document.getElementById(id)
-      .textContent = "0";
-
-  });
-
-}
-
-function expandirJogo() {
-
-  if (!projetoAtual) {
-
-    alert(
-      "Crie um jogo primeiro."
-    );
-
-    return;
-
-  }
-
-  const pedido =
-    prompt(
-      "O que você quer adicionar ao jogo?"
-    );
-
-  if (!pedido) {
-    return;
-  }
-
-  const ideiaAtual =
-    document.getElementById(
-      "ideia"
-    ).value;
-
-  document.getElementById(
-    "ideia"
-  ).value =
-    ideiaAtual +
-    "\n\nADICIONE AO JOGO:\n" +
-    pedido;
-
-  gerarJogo("expansao");
+    "Nenhum projeto";
 
 }
 
