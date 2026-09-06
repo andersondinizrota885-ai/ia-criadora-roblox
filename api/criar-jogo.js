@@ -1,378 +1,645 @@
-const MODELO = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+// api/criar-jogo.js
+// Roblox AI Studio - Script Engine
+// Backend para planejamento, geração, validação e revisão de scripts Luau.
 
+const MODELO = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+const MAX_SCRIPTS = 8;
 const MAX_REVISIONS = 2;
-const MAX_SCRIPTS = 30;
+
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
 
 function resposta(res, status, dados) {
-  return res.status(status).json(dados);
+  res.status(status).json(dados);
 }
 
-function texto(valor, fallback = "") {
-  if (valor === undefined || valor === null) return fallback;
-  return String(valor);
+function limparTexto(valor, fallback = "") {
+  if (typeof valor !== "string") return fallback;
+  return valor.trim();
 }
 
-function arraySeguro(valor) {
-  return Array.isArray(valor) ? valor : [];
-}
-
-function limparNome(nome, fallback) {
-  const valor = texto(nome, fallback)
-    .trim()
-    .replace(/[<>:"/\\|?*]/g, "_");
-
-  return valor || fallback;
-}
-
-/*
-|--------------------------------------------------------------------------
-| JSON
-|--------------------------------------------------------------------------
-*/
-
-function extrairJSON(raw) {
-  if (!raw || typeof raw !== "string") {
-    throw new Error("A IA não retornou texto.");
+function extrairJSON(texto) {
+  if (!texto || typeof texto !== "string") {
+    throw new Error("Resposta vazia da IA.");
   }
 
-  let textoResposta = raw.trim();
+  let conteudo = texto.trim();
 
-  textoResposta = textoResposta
+  // Remove markdown ```json ... ```
+  conteudo = conteudo
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
 
+  // Tenta JSON direto
   try {
-    return JSON.parse(textoResposta);
-  } catch (_) {
-    const inicioObjeto = textoResposta.indexOf("{");
-    const fimObjeto = textoResposta.lastIndexOf("}");
+    return JSON.parse(conteudo);
+  } catch (_) {}
 
-    if (inicioObjeto !== -1 && fimObjeto > inicioObjeto) {
+  // Procura primeiro objeto JSON
+  const inicioObjeto = conteudo.indexOf("{");
+  const fimObjeto = conteudo.lastIndexOf("}");
+
+  if (inicioObjeto !== -1 && fimObjeto > inicioObjeto) {
+    try {
       return JSON.parse(
-        textoResposta.substring(
-          inicioObjeto,
-          fimObjeto + 1
-        )
+        conteudo.substring(inicioObjeto, fimObjeto + 1)
       );
-    }
-
-    const inicioArray = textoResposta.indexOf("[");
-    const fimArray = textoResposta.lastIndexOf("]");
-
-    if (inicioArray !== -1 && fimArray > inicioArray) {
-      return JSON.parse(
-        textoResposta.substring(
-          inicioArray,
-          fimArray + 1
-        )
-      );
-    }
-
-    throw new Error("A IA retornou JSON inválido.");
+    } catch (_) {}
   }
+
+  // Procura array JSON
+  const inicioArray = conteudo.indexOf("[");
+  const fimArray = conteudo.lastIndexOf("]");
+
+  if (inicioArray !== -1 && fimArray > inicioArray) {
+    try {
+      return JSON.parse(
+        conteudo.substring(inicioArray, fimArray + 1)
+      );
+    } catch (_) {}
+  }
+
+  throw new Error("A IA retornou um formato que não é JSON válido.");
 }
 
-/*
-|--------------------------------------------------------------------------
-| GEMINI
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   GEMINI
+========================================================= */
 
-async function chamarGemini(prompt, options = {}) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "GEMINI_API_KEY não configurada no Vercel."
-    );
+async function chamarGemini(prompt, temperatura = 0.15) {
+  if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY não configurada na Vercel.");
   }
 
-  const modelo = options.modelo || MODELO;
-
   const url =
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-    modelo +
-    ":generateContent?key=" +
-    encodeURIComponent(apiKey);
-
-  const body = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: prompt
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature:
-        options.temperature !== undefined
-          ? options.temperature
-          : 0.2,
-
-      responseMimeType:
-        options.responseMimeType || "application/json"
-    }
-  };
+    `https://generativelanguage.googleapis.com/v1beta/models/` +
+    `${MODELO}:generateContent?key=${GEMINI_API_KEY}`;
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: temperatura,
+        responseMimeType: "application/json"
+      }
+    })
   });
 
-  const responseText = await response.text();
+  const textoResposta = await response.text();
 
   if (!response.ok) {
     throw new Error(
-      "Gemini HTTP " +
-      response.status +
-      ": " +
-      responseText
+      `Gemini HTTP ${response.status}: ${textoResposta.slice(0, 1000)}`
     );
   }
 
-  let data;
+  let dados;
 
   try {
-    data = JSON.parse(responseText);
+    dados = JSON.parse(textoResposta);
   } catch (_) {
-    throw new Error(
-      "Resposta da Gemini não é JSON válido."
-    );
+    throw new Error("Resposta inválida da API Gemini.");
   }
 
-  const result =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const texto =
+    dados?.candidates?.[0]?.content?.parts
+      ?.map((parte) => parte.text || "")
+      .join("") || "";
 
-  if (!result) {
-    throw new Error(
-      "Gemini não retornou conteúdo."
-    );
+  if (!texto) {
+    throw new Error("A Gemini não retornou conteúdo.");
   }
 
-  return result;
+  return extrairJSON(texto);
 }
 
-/*
-|--------------------------------------------------------------------------
-| NORMALIZAÇÃO DO PROJETO
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   FALLBACK
+   Nunca deixar uma solicitação de script terminar com
+   scripts: []
+========================================================= */
 
-function normalizarProjeto(projeto) {
-  projeto = projeto || {};
+function criarPlanoFallback(ideia) {
+  const texto = ideia.toLowerCase();
 
-  return {
-    title: texto(
-      projeto.title || projeto.game_name,
-      "Meu Jogo Roblox"
-    ),
+  if (
+    texto.includes("npc") ||
+    texto.includes("personagem") ||
+    texto.includes("diálogo") ||
+    texto.includes("dialogo")
+  ) {
+    return [
+      {
+        id: "npc_server",
+        name: "NPCInteractionServer",
+        type: "Script",
+        location: "ServerScriptService",
+        purpose:
+          "Controlar as interações dos jogadores com NPCs no servidor.",
+        description:
+          "Recebe a interação com NPCs e valida a comunicação no servidor.",
+        dependencies: [
+          "ReplicatedStorage > Remotes > NPCInteraction"
+        ]
+      },
+      {
+        id: "npc_client",
+        name: "NPCDialogueClient",
+        type: "LocalScript",
+        location: "StarterPlayer > StarterPlayerScripts",
+        purpose:
+          "Detectar a interação do jogador com NPCs e apresentar o diálogo.",
+        description:
+          "Controla a interação visual do jogador com NPCs.",
+        dependencies: [
+          "ReplicatedStorage > Remotes > NPCInteraction"
+        ]
+      }
+    ];
+  }
 
-    genre: texto(
-      projeto.genre,
-      "Aventura"
-    ),
+  if (
+    texto.includes("leaderstats") ||
+    texto.includes("dinheiro") ||
+    texto.includes("coins") ||
+    texto.includes("moedas")
+  ) {
+    return [
+      {
+        id: "currency_server",
+        name: "CurrencySystem",
+        type: "Script",
+        location: "ServerScriptService",
+        purpose:
+          "Criar e controlar a moeda dos jogadores.",
+        description:
+          "Sistema básico de moeda utilizando leaderstats.",
+        dependencies: []
+      }
+    ];
+  }
 
-    objective: texto(
-      projeto.objective,
-      ""
-    ),
+  if (
+    texto.includes("porta") ||
+    texto.includes("door") ||
+    texto.includes("abrir")
+  ) {
+    return [
+      {
+        id: "door_server",
+        name: "DoorSystem",
+        type: "Script",
+        location: "ServerScriptService",
+        purpose:
+          "Controlar a abertura e fechamento de uma porta.",
+        description:
+          "Sistema básico para portas interativas.",
+        dependencies: []
+      }
+    ];
+  }
 
-    difficulty: texto(
-      projeto.difficulty,
-      "Médio"
-    ),
-
-    players:
-      Number(projeto.players) ||
-      Number(projeto.estimated_players) ||
-      10,
-
-    areas: arraySeguro(projeto.areas),
-
-    objects: arraySeguro(projeto.objects),
-
-    npcs: arraySeguro(projeto.npcs),
-
-    systems: arraySeguro(projeto.systems),
-
-    quests: arraySeguro(projeto.quests),
-
-    items: arraySeguro(projeto.items),
-
-    shops: arraySeguro(projeto.shops),
-
-    pets: arraySeguro(projeto.pets),
-
-    remotes: arraySeguro(projeto.remotes),
-
-    scripts: arraySeguro(projeto.scripts),
-
-    next_upgrades:
-      arraySeguro(projeto.next_upgrades)
-  };
-}
-
-/*
-|--------------------------------------------------------------------------
-| NORMALIZAÇÃO DE SCRIPT
-|--------------------------------------------------------------------------
-|
-| Cada script agora possui:
-|
-| name
-| type
-| location
-| dependencies
-| description
-| code
-| purpose
-|
-*/
-
-function normalizarScript(script, index) {
-  script = script || {};
-
-  const tipoOriginal =
-    texto(
-      script.type ||
-      script.script_type ||
-      script.tipo,
-      "Script"
-    );
-
-  const tiposValidos = [
-    "Script",
-    "LocalScript",
-    "ModuleScript"
+  return [
+    {
+      id: "main_system",
+      name: "MainGameSystem",
+      type: "Script",
+      location: "ServerScriptService",
+      purpose:
+        "Implementar o sistema principal solicitado pelo usuário.",
+      description:
+        `Sistema gerado para a solicitação: ${ideia}`,
+      dependencies: []
+    }
   ];
+}
 
-  const type =
-    tiposValidos.includes(tipoOriginal)
-      ? tipoOriginal
-      : "Script";
+function garantirPlano(plano, ideia) {
+  if (
+    plano &&
+    Array.isArray(plano.script_plan) &&
+    plano.script_plan.length > 0
+  ) {
+    return plano.script_plan.slice(0, MAX_SCRIPTS);
+  }
 
-  const dependencies = arraySeguro(
-    script.dependencies ||
-    script.dependencias
-  ).map((item) => {
-    if (typeof item === "string") {
-      return item;
+  return criarPlanoFallback(ideia);
+}
+
+/* =========================================================
+   PLANEJADOR
+========================================================= */
+
+async function criarPlano(ideia) {
+  const prompt = `
+Você é o arquiteto principal de um projeto Roblox.
+
+Use Luau moderno e organize o sistema corretamente entre
+servidor e cliente.
+
+SOLICITAÇÃO DO USUÁRIO:
+${ideia}
+
+Crie um plano técnico de scripts.
+
+REGRAS:
+
+1. Nunca retorne script_plan vazio.
+2. Deve existir pelo menos 1 script.
+3. Use Script para lógica do servidor.
+4. Use LocalScript para lógica do cliente.
+5. Use ModuleScript quando houver código compartilhado.
+6. Nunca coloque DataStoreService em LocalScript.
+7. Não use loadstring.
+8. Evite código obsoleto.
+9. Informe a localização correta de cada script.
+10. Informe dependências.
+11. Gere somente scripts realmente necessários.
+
+Responda SOMENTE JSON:
+
+{
+  "title": "Nome do projeto",
+  "description": "Descrição",
+  "genre": "Gênero",
+  "difficulty": "Fácil | Médio | Difícil",
+  "players": 10,
+  "systems": [],
+  "script_plan": [
+    {
+      "id": "id_unico",
+      "name": "NomeDoScript",
+      "type": "Script | LocalScript | ModuleScript",
+      "location": "ServerScriptService",
+      "purpose": "Função do script",
+      "description": "Descrição técnica",
+      "dependencies": []
+    }
+  ]
+}
+`;
+
+  try {
+    return await chamarGemini(prompt, 0.1);
+  } catch (erro) {
+    console.error("Erro no planejador:", erro.message);
+
+    return {
+      title: "Roblox Game",
+      description: ideia,
+      genre: "Roblox",
+      difficulty: "Médio",
+      players: 10,
+      systems: [],
+      script_plan: criarPlanoFallback(ideia)
+    };
+  }
+}
+
+/* =========================================================
+   CÓDIGO FALLBACK
+========================================================= */
+
+function codigoFallback(spec) {
+  const nome = spec.name.toLowerCase();
+
+  // NPC SERVIDOR
+  if (
+    nome.includes("npc") &&
+    spec.type === "Script"
+  ) {
+    return `-- NPCInteractionServer
+-- Gerado pelo Roblox AI Studio
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+
+if not remotes then
+    remotes = Instance.new("Folder")
+    remotes.Name = "Remotes"
+    remotes.Parent = ReplicatedStorage
+end
+
+local npcInteraction = remotes:FindFirstChild("NPCInteraction")
+
+if not npcInteraction then
+    npcInteraction = Instance.new("RemoteEvent")
+    npcInteraction.Name = "NPCInteraction"
+    npcInteraction.Parent = remotes
+end
+
+npcInteraction.OnServerEvent:Connect(function(player, npc)
+    if typeof(npc) ~= "Instance" then
+        return
+    end
+
+    if not npc:IsDescendantOf(workspace) then
+        return
+    end
+
+    if not npc:IsA("Model") then
+        return
+    end
+
+    local humanoid = npc:FindFirstChildOfClass("Humanoid")
+
+    if not humanoid then
+        return
+    end
+
+    print(player.Name .. " interagiu com o NPC " .. npc.Name)
+
+    npcInteraction:FireClient(
+        player,
+        npc,
+        "Olá, " .. player.DisplayName .. "!"
+    )
+end)
+`;
+  }
+
+  // NPC CLIENTE
+  if (
+    nome.includes("npc") &&
+    spec.type === "LocalScript"
+  ) {
+    return `-- NPCDialogueClient
+-- Gerado pelo Roblox AI Studio
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local npcInteraction = remotes:WaitForChild("NPCInteraction")
+
+local function conectarNPC(npc)
+    if not npc:IsA("Model") then
+        return
+    end
+
+    if not npc:FindFirstChildOfClass("Humanoid") then
+        return
+    end
+
+    local prompt = npc:FindFirstChildWhichIsA(
+        "ProximityPrompt",
+        true
+    )
+
+    if not prompt then
+        return
+    end
+
+    if prompt:GetAttribute("NPCConnected") then
+        return
+    end
+
+    prompt:SetAttribute("NPCConnected", true)
+
+    prompt.Triggered:Connect(function()
+        npcInteraction:FireServer(npc)
+    end)
+end
+
+for _, objeto in ipairs(workspace:GetDescendants()) do
+    if objeto:IsA("Model") then
+        conectarNPC(objeto)
+    end
+end
+
+workspace.DescendantAdded:Connect(function(objeto)
+    if objeto:IsA("Model") then
+        task.defer(function()
+            conectarNPC(objeto)
+        end)
+    end
+end)
+
+npcInteraction.OnClientEvent:Connect(function(npc, mensagem)
+    print("NPC:", npc.Name)
+    print("Diálogo:", mensagem)
+end)
+`;
+  }
+
+  // MOEDA
+  if (
+    nome.includes("currency") ||
+    nome.includes("coin") ||
+    nome.includes("dinheiro")
+  ) {
+    return `-- CurrencySystem
+-- Sistema básico de moeda
+
+local Players = game:GetService("Players")
+
+Players.PlayerAdded:Connect(function(player)
+    local leaderstats = Instance.new("Folder")
+    leaderstats.Name = "leaderstats"
+    leaderstats.Parent = player
+
+    local coins = Instance.new("IntValue")
+    coins.Name = "Coins"
+    coins.Value = 0
+    coins.Parent = leaderstats
+end)
+`;
+  }
+
+  // FALLBACK GENÉRICO
+  return `-- ${spec.name}
+-- Gerado pelo Roblox AI Studio
+
+local function iniciarSistema()
+    print("${spec.name} iniciado.")
+end
+
+iniciarSistema()
+`;
+}
+
+/* =========================================================
+   GERADOR DE SCRIPT
+========================================================= */
+
+async function gerarScript(spec, ideia, plano) {
+  const prompt = `
+Você é um programador especialista em Roblox Luau.
+
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
+SOLICITAÇÃO ORIGINAL:
+${ideia}
+
+SCRIPT A SER GERADO:
+${JSON.stringify(spec, null, 2)}
+
+Crie SOMENTE o código Luau desse script.
+
+REGRAS OBRIGATÓRIAS:
+
+- Código Luau válido.
+- Não use Markdown.
+- Não coloque \`\`\`.
+- Não invente APIs inexistentes.
+- Use serviços Roblox corretamente.
+- ServerScriptService para lógica segura do servidor.
+- StarterPlayerScripts para LocalScripts gerais.
+- ReplicatedStorage para objetos compartilhados.
+- RemoteEvents devem ter validação no servidor.
+- Não confie em valores enviados pelo cliente.
+- Não use loadstring.
+- Não use getfenv.
+- Não use setfenv.
+- Não use APIs depreciadas sem necessidade.
+- Não coloque DataStoreService em LocalScript.
+- O código deve ser executável.
+- Não escreva explicações fora do código.
+
+Retorne JSON:
+
+{
+  "name": "${spec.name}",
+  "type": "${spec.type}",
+  "location": "${spec.location}",
+  "dependencies": ${JSON.stringify(spec.dependencies || [])},
+  "description": ${JSON.stringify(spec.description || "")},
+  "purpose": ${JSON.stringify(spec.purpose || "")},
+  "code": "CÓDIGO LUA AQUI"
+}
+`;
+
+  try {
+    const resultado = await chamarGemini(prompt, 0.08);
+
+    if (
+      !resultado ||
+      typeof resultado.code !== "string" ||
+      resultado.code.trim().length < 10
+    ) {
+      throw new Error("A IA retornou código vazio.");
     }
 
-    return texto(
-      item?.name ||
-      item?.nome,
-      ""
+    return {
+      name: limparTexto(resultado.name, spec.name),
+      type: limparTexto(resultado.type, spec.type),
+      location: limparTexto(
+        resultado.location,
+        spec.location
+      ),
+      dependencies: Array.isArray(resultado.dependencies)
+        ? resultado.dependencies
+        : spec.dependencies || [],
+      description: limparTexto(
+        resultado.description,
+        spec.description
+      ),
+      purpose: limparTexto(
+        resultado.purpose,
+        spec.purpose
+      ),
+      code: resultado.code.trim(),
+      generated_by_ai: true
+    };
+  } catch (erro) {
+    console.error(
+      `Falha ao gerar ${spec.name}:`,
+      erro.message
     );
-  }).filter(Boolean);
 
-  return {
-    id:
-      texto(
-        script.id,
-        `script_${index + 1}`
-      ),
-
-    name: limparNome(
-      script.name ||
-      script.nome,
-      `GeneratedScript_${index + 1}`
-    ),
-
-    type,
-
-    location:
-      texto(
-        script.location ||
-        script.path ||
-        script.localizacao,
-        type === "LocalScript"
-          ? "StarterPlayer > StarterPlayerScripts"
-          : type === "ModuleScript"
-            ? "ReplicatedStorage > Modules"
-            : "ServerScriptService"
-      ),
-
-    dependencies,
-
-    description:
-      texto(
-        script.description ||
-        script.descricao,
-        ""
-      ),
-
-    purpose:
-      texto(
-        script.purpose ||
-        script.objetivo,
-        ""
-      ),
-
-    code:
-      texto(
-        script.code ||
-        script.codigo,
-        ""
-      ),
-
-    enabled:
-      script.enabled !== false
-  };
+    return {
+      name: spec.name,
+      type: spec.type,
+      location: spec.location,
+      dependencies: spec.dependencies || [],
+      description: spec.description || "",
+      purpose: spec.purpose || "",
+      code: codigoFallback(spec),
+      generated_by_ai: false,
+      fallback: true
+    };
+  }
 }
 
-/*
-|--------------------------------------------------------------------------
-| VALIDAÇÃO BÁSICA DO SCRIPT
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   VALIDAÇÃO LOCAL
+========================================================= */
 
 function validarScript(script) {
-  const erros = [];
-  const avisos = [];
+  const errors = [];
+  const warnings = [];
 
   if (!script.name) {
-    erros.push("Script sem nome.");
+    errors.push("Script sem nome.");
   }
 
   if (!script.type) {
-    erros.push("Script sem tipo.");
+    errors.push("Script sem tipo.");
   }
 
   if (!script.location) {
-    erros.push("Script sem localização.");
+    errors.push("Script sem localização.");
   }
 
-  if (!script.code.trim()) {
-    erros.push("Script sem código.");
+  if (!script.code || script.code.trim().length < 10) {
+    errors.push("Script sem código válido.");
   }
 
-  const codigo = script.code;
+  const codigo = script.code || "";
 
   if (
     codigo.includes("```lua") ||
     codigo.includes("```luau") ||
     codigo.includes("```")
   ) {
-    avisos.push(
-      "O código contém delimitadores Markdown."
+    errors.push(
+      "O código contém blocos Markdown."
     );
   }
 
-  if (
-    codigo.includes("TODO") ||
-    codigo.includes("IMPLEMENT_ME")
-  ) {
-    avisos.push(
-      "O código contém marcador de implementação."
+  if (/TODO|IMPLEMENT_ME/i.test(codigo)) {
+    warnings.push(
+      "O código possui marcador TODO ou IMPLEMENT_ME."
+    );
+  }
+
+  if (/loadstring\s*\(/i.test(codigo)) {
+    errors.push(
+      "loadstring não é permitido."
+    );
+  }
+
+  if (/getfenv\s*\(/i.test(codigo)) {
+    errors.push(
+      "getfenv não deve ser utilizado."
+    );
+  }
+
+  if (/setfenv\s*\(/i.test(codigo)) {
+    errors.push(
+      "setfenv não deve ser utilizado."
     );
   }
 
@@ -380,8 +647,8 @@ function validarScript(script) {
     script.type === "LocalScript" &&
     /DataStoreService/i.test(codigo)
   ) {
-    erros.push(
-      "LocalScript não deve acessar DataStoreService diretamente."
+    errors.push(
+      "LocalScript não deve acessar DataStoreService."
     );
   }
 
@@ -389,295 +656,78 @@ function validarScript(script) {
     script.type === "LocalScript" &&
     /ServerStorage/i.test(codigo)
   ) {
-    erros.push(
+    errors.push(
       "LocalScript não deve acessar ServerStorage."
     );
   }
 
-  if (
-    /\bgame\s*:\s*GetService\s*\(\s*["']HttpService["']\s*\)/i.test(
-      codigo
-    )
-  ) {
-    avisos.push(
-      "Script utiliza HttpService; confirme se a configuração necessária está habilitada."
+  if (/HttpService/i.test(codigo)) {
+    warnings.push(
+      "O script utiliza HttpService. Verifique a configuração do jogo."
     );
   }
 
   if (
-    /\bloadstring\s*\(/i.test(codigo)
+    script.type === "LocalScript" &&
+    /FireServer\s*\(/i.test(codigo)
   ) {
-    erros.push(
-      "loadstring não deve ser usado neste código gerado."
-    );
-  }
-
-  if (
-    /\bgetfenv\s*\(/i.test(codigo) ||
-    /\bsetfenv\s*\(/i.test(codigo)
-  ) {
-    avisos.push(
-      "Código utiliza funções de ambiente que podem ser inadequadas no Roblox."
+    warnings.push(
+      "RemoteEvent detectado. O servidor deve validar os dados recebidos."
     );
   }
 
   return {
-    valido: erros.length === 0,
-    erros,
-    avisos
+    valid: errors.length === 0,
+    errors,
+    warnings
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| LIMPEZA DO CÓDIGO
-|--------------------------------------------------------------------------
-*/
-
-function limparCodigo(codigo) {
-  let resultado = texto(codigo);
-
-  resultado = resultado
-    .replace(/^```lua\s*/i, "")
-    .replace(/^```luau\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-
-  return resultado;
-}
-
-/*
-|--------------------------------------------------------------------------
-| PLANEJADOR
-|--------------------------------------------------------------------------
-*/
-
-async function criarPlano(ideia) {
-  const prompt = `
-Você é o ARQUITETO PRINCIPAL de uma IA especialista em Roblox Studio.
-
-Sua função é transformar a ideia do usuário em uma especificação técnica
-antes de qualquer código ser escrito.
-
-Roblox usa Luau.
-
-IDEIA DO USUÁRIO:
-${ideia}
-
-Crie SOMENTE JSON válido.
-
-Estrutura:
-
-{
-  "title": "Nome do jogo",
-  "genre": "Gênero",
-  "objective": "Objetivo principal",
-  "difficulty": "Fácil, Médio ou Difícil",
-  "players": 10,
-
-  "areas": [],
-  "objects": [],
-  "npcs": [],
-  "systems": [],
-  "quests": [],
-  "items": [],
-  "shops": [],
-  "pets": [],
-  "remotes": [],
-
-  "script_plan": [
-    {
-      "id": "script_1",
-      "name": "Nome",
-      "type": "Script",
-      "location": "ServerScriptService",
-      "purpose": "Responsabilidade exata",
-      "dependencies": [
-        "OutroScript",
-        "RemoteEvent"
-      ],
-      "description": "Como esse script funciona"
-    }
-  ],
-
-  "next_upgrades": []
-}
-
-REGRAS:
-
-1. Não escreva código.
-2. Cada sistema importante deve possuir responsabilidade clara.
-3. Não crie scripts duplicados.
-4. Use Script para lógica do servidor.
-5. Use LocalScript para lógica do cliente.
-6. Use ModuleScript para código reutilizável.
-7. Defina dependências reais.
-8. Defina o caminho completo de cada script.
-9. Não coloque lógica do servidor em LocalScript.
-10. Não coloque lógica exclusiva do cliente em Script.
-11. Evite dependências circulares.
-12. Use RemoteEvents/RemoteFunctions quando cliente e servidor precisarem conversar.
-13. O projeto precisa ser implementável no Roblox Studio.
-14. Não invente APIs inexistentes.
-15. Crie somente os sistemas necessários para a ideia.
-
-Retorne SOMENTE JSON.
-`;
-
-  const raw = await chamarGemini(prompt, {
-    temperature: 0.15
-  });
-
-  return extrairJSON(raw);
-}
-
-/*
-|--------------------------------------------------------------------------
-| GERADOR DE SCRIPTS
-|--------------------------------------------------------------------------
-*/
-
-async function gerarScripts(plano) {
-  const scriptPlan = arraySeguro(
-    plano.script_plan
-  );
-
-  if (scriptPlan.length > MAX_SCRIPTS) {
-    scriptPlan.length = MAX_SCRIPTS;
-  }
-
-  const resultados = [];
-
-  for (
-    let index = 0;
-    index < scriptPlan.length;
-    index++
-  ) {
-    const specification =
-      scriptPlan[index];
-
-    const prompt = `
-Você é um engenheiro sênior de Roblox/Luau.
-
-Você precisa implementar UM ÚNICO script de um projeto Roblox.
-
-PROJETO:
-${JSON.stringify(plano, null, 2)}
-
-SCRIPT A IMPLEMENTAR:
-${JSON.stringify(
-  specification,
-  null,
-  2
-)}
-
-REGRAS ABSOLUTAS:
-
-1. Escreva código Luau válido.
-2. Retorne SOMENTE JSON.
-3. Não use Markdown.
-4. Não coloque o código dentro de \`\`\`.
-5. Não invente APIs do Roblox.
-6. Respeite o tipo do script.
-7. Respeite a localização.
-8. Respeite as dependências.
-9. Use GetService corretamente.
-10. Prefira referências locais.
-11. Não crie variáveis inexistentes.
-12. Não dependa de objetos que não foram planejados.
-13. Se precisar de um objeto, ele deve aparecer nas dependências.
-14. Não coloque lógica exclusiva do servidor em LocalScript.
-15. Não coloque lógica exclusiva do cliente em Script.
-16. Não use loadstring.
-17. Não coloque chaves/API secrets no código.
-18. Use nomes consistentes.
-19. O código deve ser completo, não um exemplo parcial.
-20. Não escreva comentários dizendo que algo deve ser implementado depois.
-21. Não omita funções importantes.
-22. O código precisa poder ser colado no Roblox Studio.
-
-FORMATO:
-
-{
-  "name": "Nome do script",
-  "type": "Script | LocalScript | ModuleScript",
-  "location": "Caminho",
-  "dependencies": [],
-  "description": "Descrição",
-  "purpose": "Responsabilidade",
-  "code": "CÓDIGO LUA AQUI"
-}
-`;
-
-    const raw = await chamarGemini(prompt, {
-      temperature: 0.1
-    });
-
-    const scriptGerado =
-      normalizarScript(
-        extrairJSON(raw),
-        index
-      );
-
-    scriptGerado.code =
-      limparCodigo(
-        scriptGerado.code
-      );
-
-    resultados.push(
-      scriptGerado
-    );
-  }
-
-  return resultados;
-}
-
-/*
-|--------------------------------------------------------------------------
-| REVISOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   REVISOR
+========================================================= */
 
 async function revisarScript(script, plano) {
-  const validacao =
-    validarScript(script);
+  const validacaoLocal = validarScript(script);
+
+  if (!validacaoLocal.valid) {
+    return {
+      approved: false,
+      score: 30,
+      errors: validacaoLocal.errors,
+      warnings: validacaoLocal.warnings,
+      fixes: [
+        "Corrigir os erros encontrados na validação local."
+      ],
+      source: "local"
+    };
+  }
 
   const prompt = `
-Você é o REVISOR DE CÓDIGO de uma IA especialista em Roblox.
-
-Analise cuidadosamente o script abaixo.
-
-PROJETO:
-${JSON.stringify(plano, null, 2)}
+Você é um revisor extremamente rigoroso de código Roblox Luau.
 
 SCRIPT:
 ${JSON.stringify(script, null, 2)}
 
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
 Analise:
 
-- sintaxe Luau;
-- APIs Roblox;
-- serviços;
-- cliente/servidor;
-- referências;
-- dependências;
-- eventos;
-- RemoteEvents;
-- RemoteFunctions;
-- escopo de variáveis;
-- funções inexistentes;
-- propriedades inexistentes;
-- objetos que podem não existir;
-- problemas de execução;
-- loops problemáticos;
-- conexões de eventos;
-- segurança básica;
-- inconsistências com o projeto.
+1. Sintaxe Luau.
+2. APIs Roblox.
+3. Serviços utilizados.
+4. Cliente versus servidor.
+5. Segurança.
+6. RemoteEvents.
+7. Possíveis erros em runtime.
+8. Variáveis inexistentes.
+9. Eventos incorretos.
+10. Código obsoleto.
+11. Organização.
+12. Compatibilidade com Roblox Studio.
 
-IMPORTANTE:
-
-Não considere que o código está correto só porque parece correto.
+Não invente problemas.
 
 Retorne SOMENTE JSON:
 
@@ -690,445 +740,486 @@ Retorne SOMENTE JSON:
 }
 
 score deve ser de 0 a 100.
-
-Se existir qualquer erro que possa impedir a execução,
-approved deve ser false.
-
-VALIDAÇÃO LOCAL JÁ DETECTADA:
-${JSON.stringify(
-  validacao,
-  null,
-  2
-)}
+approved só pode ser true se o script estiver realmente utilizável.
 `;
 
-  const raw =
-    await chamarGemini(prompt, {
-      temperature: 0.05
-    });
+  try {
+    const review = await chamarGemini(prompt, 0.05);
 
-  return extrairJSON(raw);
+    return {
+      approved: Boolean(review.approved),
+      score: Math.max(
+        0,
+        Math.min(100, Number(review.score) || 0)
+      ),
+      errors: Array.isArray(review.errors)
+        ? review.errors
+        : [],
+      warnings: Array.isArray(review.warnings)
+        ? review.warnings
+        : [],
+      fixes: Array.isArray(review.fixes)
+        ? review.fixes
+        : [],
+      source: "ai"
+    };
+  } catch (erro) {
+    console.error(
+      `Erro revisando ${script.name}:`,
+      erro.message
+    );
+
+    return {
+      approved: validacaoLocal.valid,
+      score: validacaoLocal.valid ? 80 : 30,
+      errors: validacaoLocal.errors,
+      warnings: validacaoLocal.warnings,
+      fixes: [],
+      source: "local"
+    };
+  }
 }
 
-/*
-|--------------------------------------------------------------------------
-| CORRETOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   CORRETOR
+========================================================= */
 
-async function corrigirScript(
-  script,
-  review,
-  plano
-) {
+async function corrigirScript(script, review, plano) {
   const prompt = `
-Você é o CORRETOR FINAL de código Roblox/Luau.
+Você é um especialista em correção de scripts Roblox Luau.
 
-O script abaixo apresentou problemas durante a revisão.
-
-PROJETO:
-${JSON.stringify(plano, null, 2)}
-
-SCRIPT ORIGINAL:
+SCRIPT ATUAL:
 ${JSON.stringify(script, null, 2)}
 
 REVISÃO:
 ${JSON.stringify(review, null, 2)}
 
-Corrija TODOS os problemas encontrados.
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
+Corrija TODOS os erros reais encontrados.
 
 REGRAS:
 
-1. Preserve a finalidade do script.
-2. Preserve o tipo.
-3. Preserve a localização.
-4. Preserve as dependências válidas.
-5. Não invente APIs.
-6. Não remova funcionalidades importantes sem motivo.
-7. Corrija referências inexistentes.
-8. Corrija problemas cliente/servidor.
-9. Corrija escopo.
-10. Corrija eventos.
-11. Corrija chamadas de serviço.
-12. Não use loadstring.
-13. Não use código Markdown.
-14. Retorne SOMENTE JSON.
-15. O campo code deve conter o código Luau completo.
+- Preserve a finalidade original.
+- Use Luau moderno.
+- Não use loadstring.
+- Não use getfenv.
+- Não use setfenv.
+- Não coloque lógica do servidor em LocalScript.
+- Não confie no cliente.
+- Não invente APIs.
+- Retorne código executável.
+- Não use Markdown.
 
-Formato:
+Retorne SOMENTE JSON:
 
 {
-  "name": "Nome",
-  "type": "Script",
-  "location": "ServerScriptService",
-  "dependencies": [],
-  "description": "",
-  "purpose": "",
-  "code": ""
+  "code": "CÓDIGO LUA CORRIGIDO"
 }
 `;
 
-  const raw =
-    await chamarGemini(prompt, {
-      temperature: 0.05
-    });
-
-  const corrigido =
-    normalizarScript(
-      extrairJSON(raw),
-      0
-    );
-
-  corrigido.code =
-    limparCodigo(
-      corrigido.code
-    );
-
-  return corrigido;
-}
-
-/*
-|--------------------------------------------------------------------------
-| PIPELINE DE QUALIDADE
-|--------------------------------------------------------------------------
-*/
-
-async function verificarEUsar(
-  script,
-  plano
-) {
-  let atual = script;
-
-  const historico = [];
-
-  for (
-    let tentativa = 0;
-    tentativa <= MAX_REVISIONS;
-    tentativa++
-  ) {
-    const review =
-      await revisarScript(
-        atual,
-        plano
-      );
-
-    historico.push({
-      tentativa,
-      review
-    });
-
-    const validacao =
-      validarScript(atual);
-
-    const aprovado =
-      review?.approved === true &&
-      validacao.valido === true;
-
-    if (aprovado) {
-      return {
-        script: atual,
-        status: "approved",
-        score:
-          Number(review.score) || 100,
-        warnings: [
-          ...validacao.avisos,
-          ...arraySeguro(review.warnings)
-        ],
-        revisions: tentativa,
-        history: historico
-      };
-    }
+  try {
+    const resultado = await chamarGemini(prompt, 0.05);
 
     if (
-      tentativa >= MAX_REVISIONS
+      !resultado ||
+      typeof resultado.code !== "string" ||
+      resultado.code.trim().length < 10
     ) {
+      throw new Error("Correção vazia.");
+    }
+
+    return {
+      ...script,
+      code: resultado.code.trim(),
+      generated_by_ai: true
+    };
+  } catch (erro) {
+    console.error(
+      `Erro corrigindo ${script.name}:`,
+      erro.message
+    );
+
+    return script;
+  }
+}
+
+/* =========================================================
+   PIPELINE DE QUALIDADE
+========================================================= */
+
+async function verificarEUsar(script, plano) {
+  let atual = script;
+  let revisoes = 0;
+
+  while (revisoes <= MAX_REVISIONS) {
+    const review = await revisarScript(atual, plano);
+
+    if (review.approved) {
       return {
-        script: atual,
-        status: "needs_review",
-        score:
-          Number(review.score) || 0,
-        warnings: [
-          ...validacao.avisos,
-          ...arraySeguro(review.warnings),
-          ...arraySeguro(review.errors)
-        ],
-        revisions: tentativa,
-        history: historico
+        ...atual,
+        quality: {
+          status: "approved",
+          score: review.score,
+          revisions: revisoes,
+          warnings: review.warnings,
+          errors: review.errors || []
+        }
       };
     }
 
-    atual =
-      await corrigirScript(
-        atual,
-        review,
-        plano
-      );
+    if (revisoes >= MAX_REVISIONS) {
+      return {
+        ...atual,
+        quality: {
+          status: "needs_review",
+          score: review.score,
+          revisions: revisoes,
+          warnings: review.warnings,
+          errors: review.errors || [],
+          fixes: review.fixes || []
+        }
+      };
+    }
+
+    atual = await corrigirScript(
+      atual,
+      review,
+      plano
+    );
+
+    revisoes++;
   }
 
   return {
-    script: atual,
-    status: "needs_review",
-    score: 0,
-    warnings: [
-      "Não foi possível concluir a validação."
-    ],
-    revisions: MAX_REVISIONS,
-    history: historico
+    ...atual,
+    quality: {
+      status: "needs_review",
+      score: 50,
+      revisions: revisoes,
+      warnings: [],
+      errors: [
+        "Não foi possível concluir a revisão."
+      ]
+    }
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| BUILDER DE COMPATIBILIDADE
-|--------------------------------------------------------------------------
-|
-| NÃO É MAIS A ARQUITETURA PRINCIPAL.
-|
-| Serve apenas para clientes antigos que ainda esperam
-| projeto.builder_script.code.
-|
-*/
+/* =========================================================
+   NORMALIZAÇÃO DO PROJETO
+========================================================= */
+
+function normalizarProjeto(base, ideia, scripts) {
+  const plano = base || {};
+
+  const scores = scripts
+    .map((s) => Number(s?.quality?.score || 0))
+    .filter((n) => n > 0);
+
+  const aprovados = scripts.filter(
+    (s) => s?.quality?.status === "approved"
+  ).length;
+
+  const media =
+    scores.length > 0
+      ? Math.round(
+          scores.reduce((a, b) => a + b, 0) /
+            scores.length
+        )
+      : 0;
+
+  return {
+    title:
+      limparTexto(plano.title) ||
+      "Roblox AI Game",
+
+    game_name:
+      limparTexto(plano.title) ||
+      "Roblox AI Game",
+
+    description:
+      limparTexto(plano.description) ||
+      ideia,
+
+    genre:
+      limparTexto(plano.genre) ||
+      "Roblox",
+
+    difficulty:
+      limparTexto(plano.difficulty) ||
+      "Médio",
+
+    players:
+      Number(plano.players) || 10,
+
+    estimated_players:
+      Number(plano.players) || 10,
+
+    systems: Array.isArray(plano.systems)
+      ? plano.systems
+      : [],
+
+    objects: Array.isArray(plano.objects)
+      ? plano.objects
+      : [],
+
+    npcs: Array.isArray(plano.npcs)
+      ? plano.npcs
+      : [],
+
+    quests: Array.isArray(plano.quests)
+      ? plano.quests
+      : [],
+
+    items: Array.isArray(plano.items)
+      ? plano.items
+      : [],
+
+    shops: Array.isArray(plano.shops)
+      ? plano.shops
+      : [],
+
+    pets: Array.isArray(plano.pets)
+      ? plano.pets
+      : [],
+
+    recommended_remotes:
+      Array.isArray(plano.recommended_remotes)
+        ? plano.recommended_remotes
+        : [],
+
+    scripts,
+
+    steps: Array.isArray(plano.steps)
+      ? plano.steps
+      : [],
+
+    future_upgrades:
+      Array.isArray(plano.future_upgrades)
+        ? plano.future_upgrades
+        : [],
+
+    quality: {
+      total_scripts: scripts.length,
+      approved_scripts: aprovados,
+      scripts_needing_review:
+        scripts.length - aprovados,
+      average_score: media
+    },
+
+    generated_by:
+      "Roblox AI Studio - Script Engine",
+
+    engine_version: "2.1"
+  };
+}
+
+/* =========================================================
+   BUILDER DE COMPATIBILIDADE
+   Não é mais o sistema principal.
+========================================================= */
 
 function criarCompatibilidadeBuilder(scripts) {
-  const blocos = [];
-
-  for (const script of scripts) {
-    blocos.push(
-      [
-        `-- ==================================================`,
-        `-- ${script.name}`,
-        `-- Tipo: ${script.type}`,
-        `-- Localização: ${script.location}`,
-        `-- ==================================================`,
-        script.code
-      ].join("\n")
-    );
-  }
+  const blocos = scripts.map((script) => {
+    return [
+      `-- ========================================`,
+      `-- ${script.name}`,
+      `-- Tipo: ${script.type}`,
+      `-- Local: ${script.location}`,
+      `-- ========================================`,
+      ``,
+      script.code
+    ].join("\n");
+  });
 
   return {
     name: "GeneratedScripts",
     type: "Collection",
-    code: blocos.join(
-      "\n\n"
-    )
+    code: blocos.join("\n\n\n")
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| HANDLER
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   HANDLER
+========================================================= */
 
-module.exports = async function handler(
-  req,
-  res
-) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
-    return resposta(
-      res,
-      405,
-      {
-        sucesso: false,
-        erro: "Método não permitido."
-      }
-    );
+    return resposta(res, 405, {
+      sucesso: false,
+      erro: "Método não permitido. Use POST."
+    });
   }
 
   try {
-    const body =
-      req.body || {};
+    const body = req.body || {};
 
-    const ideia =
-      texto(
-        body.ideia,
-        ""
-      ).trim();
+    const ideia = limparTexto(
+      body.ideia ||
+      body.idea ||
+      body.prompt
+    );
 
     if (!ideia) {
-      return resposta(
-        res,
-        400,
-        {
-          sucesso: false,
-          erro:
-            "Digite uma ideia para o jogo."
-        }
-      );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ETAPA 1 — PLANEJAMENTO
-    |--------------------------------------------------------------------------
-    */
-
-    const plano =
-      await criarPlano(
-        ideia
-      );
-
-    /*
-    |--------------------------------------------------------------------------
-    | ETAPA 2 — PROJETO BASE
-    |--------------------------------------------------------------------------
-    */
-
-    const projeto =
-      normalizarProjeto(
-        plano
-      );
-
-    /*
-    |--------------------------------------------------------------------------
-    | ETAPA 3 — GERAÇÃO DOS SCRIPTS
-    |--------------------------------------------------------------------------
-    */
-
-    const scriptsGerados =
-      await gerarScripts(
-        projeto
-      );
-
-    /*
-    |--------------------------------------------------------------------------
-    | ETAPA 4 — REVISÃO + AUTOCORREÇÃO
-    |--------------------------------------------------------------------------
-    */
-
-    const scriptsFinais = [];
-
-    for (
-      const script of scriptsGerados
-    ) {
-      const resultado =
-        await verificarEUsar(
-          script,
-          projeto
-        );
-
-      const finalScript =
-        resultado.script;
-
-      scriptsFinais.push({
-        ...finalScript,
-
-        quality: {
-          status:
-            resultado.status,
-
-          score:
-            resultado.score,
-
-          revisions:
-            resultado.revisions,
-
-          warnings:
-            resultado.warnings
-        }
+      return resposta(res, 400, {
+        sucesso: false,
+        erro: "Digite uma ideia para o jogo ou script."
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ETAPA 5 — RESULTADO
-    |--------------------------------------------------------------------------
-    */
+    console.log(
+      "========================================"
+    );
+    console.log(
+      "ROBLOX AI STUDIO - NOVA SOLICITAÇÃO"
+    );
+    console.log(
+      "Ideia:",
+      ideia
+    );
+    console.log(
+      "========================================"
+    );
 
-    projeto.scripts =
-      scriptsFinais;
+    // 1. PLANEJAMENTO
+    const planoIA = await criarPlano(ideia);
 
-    /*
-    | Compatibilidade com o frontend antigo.
-    | A nova IA NÃO depende disso.
-    */
+    // 2. GARANTIR QUE EXISTE PELO MENOS UM SCRIPT
+    const scriptPlan = garantirPlano(
+      planoIA,
+      ideia
+    );
 
+    console.log(
+      "Scripts planejados:",
+      scriptPlan.length
+    );
+
+    // 3. GERAR SCRIPTS
+    const scriptsGerados = [];
+
+    for (const spec of scriptPlan) {
+      console.log(
+        "Gerando:",
+        spec.name
+      );
+
+      const script = await gerarScript(
+        spec,
+        ideia,
+        planoIA
+      );
+
+      scriptsGerados.push(script);
+    }
+
+    // Segurança extra:
+    // nunca permitir retorno com array vazio
+    if (scriptsGerados.length === 0) {
+      const fallbackPlan =
+        criarPlanoFallback(ideia);
+
+      for (const spec of fallbackPlan) {
+        scriptsGerados.push({
+          name: spec.name,
+          type: spec.type,
+          location: spec.location,
+          dependencies:
+            spec.dependencies || [],
+          description:
+            spec.description || "",
+          purpose:
+            spec.purpose || "",
+          code: codigoFallback(spec),
+          generated_by_ai: false,
+          fallback: true
+        });
+      }
+    }
+
+    // 4. REVISÃO
+    const scriptsFinais = [];
+
+    for (const script of scriptsGerados) {
+      console.log(
+        "Revisando:",
+        script.name
+      );
+
+      const finalScript =
+        await verificarEUsar(
+          script,
+          planoIA
+        );
+
+      scriptsFinais.push(finalScript);
+    }
+
+    // 5. PROJETO FINAL
+    const projeto = normalizarProjeto(
+      planoIA,
+      ideia,
+      scriptsFinais
+    );
+
+    // Compatibilidade com a interface antiga
     projeto.builder_script =
       criarCompatibilidadeBuilder(
         scriptsFinais
       );
 
-    const aprovados =
-      scriptsFinais.filter(
-        (script) =>
-          script.quality?.status ===
-          "approved"
-      ).length;
+    const quality = projeto.quality;
 
-    const scoreMedio =
-      scriptsFinais.length > 0
-        ? Math.round(
-            scriptsFinais.reduce(
-              (total, script) =>
-                total +
-                Number(
-                  script.quality?.score ||
-                  0
-                ),
-              0
-            ) /
-            scriptsFinais.length
-          )
-        : 0;
-
-    projeto.quality = {
-      total_scripts:
-        scriptsFinais.length,
-
-      approved_scripts:
-        aprovados,
-
-      scripts_needing_review:
-        scriptsFinais.length -
-        aprovados,
-
-      average_score:
-        scoreMedio
-    };
-
-    projeto.generated_by =
-      "Roblox AI Studio - Script Engine";
-
-    projeto.engine_version =
-      "2.0";
-
-    return resposta(
-      res,
-      200,
-      {
-        sucesso: true,
-        projeto,
-
-        /*
-        | Acesso direto aos scripts.
-        */
-        scripts:
-          scriptsFinais,
-
-        quality:
-          projeto.quality
-      }
+    console.log(
+      "========================================"
+    );
+    console.log(
+      "FINALIZADO"
+    );
+    console.log(
+      "Total:",
+      quality.total_scripts
+    );
+    console.log(
+      "Aprovados:",
+      quality.approved_scripts
+    );
+    console.log(
+      "Score:",
+      quality.average_score
+    );
+    console.log(
+      "========================================"
     );
 
-  } catch (error) {
+    return resposta(res, 200, {
+      sucesso: true,
+
+      projeto,
+
+      // Também no nível principal para
+      // facilitar compatibilidade.
+      scripts: scriptsFinais,
+
+      quality,
+
+      mensagem:
+        `${scriptsFinais.length} script(s) gerado(s) com sucesso.`
+    });
+
+  } catch (erro) {
     console.error(
       "ERRO INTERNO:",
-      error
+      erro
     );
 
-    return resposta(
-      res,
-      500,
-      {
-        sucesso: false,
-
-        erro:
-          "Não foi possível gerar o projeto.",
-
-        detalhe:
-          error?.message ||
-          "Erro desconhecido."
-      }
-    );
+    return resposta(res, 500, {
+      sucesso: false,
+      erro:
+        erro?.message ||
+        "Erro interno ao gerar projeto.",
+      scripts: []
+    });
   }
-};
+};9
