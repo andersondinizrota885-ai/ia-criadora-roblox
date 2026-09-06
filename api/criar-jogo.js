@@ -1,699 +1,861 @@
+const MODELO = "gemini-3.6-flash";
+
+function resposta(res, status, dados) {
+  res.status(status).json(dados);
+}
+
+function limparProjeto(projeto) {
+  return {
+    title: projeto.title || "Meu Jogo Roblox",
+    genre: projeto.genre || "Aventura",
+    objective: projeto.objective || "",
+    difficulty: projeto.difficulty || "Médio",
+    players: Number(projeto.players) || 10,
+
+    areas: Array.isArray(projeto.areas)
+      ? projeto.areas
+      : [],
+
+    objects: Array.isArray(projeto.objects)
+      ? projeto.objects
+      : [],
+
+    npcs: Array.isArray(projeto.npcs)
+      ? projeto.npcs
+      : [],
+
+    systems: Array.isArray(projeto.systems)
+      ? projeto.systems
+      : [],
+
+    quests: Array.isArray(projeto.quests)
+      ? projeto.quests
+      : [],
+
+    items: Array.isArray(projeto.items)
+      ? projeto.items
+      : [],
+
+    shops: Array.isArray(projeto.shops)
+      ? projeto.shops
+      : [],
+
+    pets: Array.isArray(projeto.pets)
+      ? projeto.pets
+      : [],
+
+    remotes: Array.isArray(projeto.remotes)
+      ? projeto.remotes
+      : [],
+
+    scripts: Array.isArray(projeto.scripts)
+      ? projeto.scripts
+      : [],
+
+    next_upgrades: Array.isArray(projeto.next_upgrades)
+      ? projeto.next_upgrades
+      : []
+  };
+}
+
+function gerarBuilder(projeto) {
+
+  const dados = JSON.stringify(projeto)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\r?\n/g, "\\n");
+
+  return `-- ROBLOX AI BUILDER
+-- Gerado pelo Roblox AI Studio
+
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+
+local PROJECT_JSON = "${dados}"
+
+local PROJECT
+
+local ok, result = pcall(function()
+    return HttpService:JSONDecode(PROJECT_JSON)
+end)
+
+if not ok then
+    warn("[Roblox AI] Erro ao ler projeto:", result)
+    return
+end
+
+--------------------------------------------------
+-- FUNÇÕES
+--------------------------------------------------
+
+local function folder(parent, name)
+
+    local old = parent:FindFirstChild(name)
+
+    if old then
+        old:Destroy()
+    end
+
+    local f = Instance.new("Folder")
+    f.Name = name
+    f.Parent = parent
+
+    return f
+end
+
+local function part(parent, name, position, size)
+
+    local p = Instance.new("Part")
+
+    p.Name = name
+    p.Position = position
+    p.Size = size
+
+    p.Anchored = true
+    p.CanCollide = true
+
+    p.Parent = parent
+
+    return p
+end
+
+local function stringValue(parent, name, value)
+
+    local v = Instance.new("StringValue")
+
+    v.Name = name
+    v.Value = tostring(value or "")
+
+    v.Parent = parent
+
+    return v
+end
+
+--------------------------------------------------
+-- LIMPAR PROJETO ANTERIOR
+--------------------------------------------------
+
+local oldMap = workspace:FindFirstChild("GeneratedMap")
+
+if oldMap then
+    oldMap:Destroy()
+end
+
+local replicated = game:GetService("ReplicatedStorage")
+
+local oldAI = replicated:FindFirstChild("RobloxAI")
+
+if oldAI then
+    oldAI:Destroy()
+end
+
+--------------------------------------------------
+-- WORKSPACE
+--------------------------------------------------
+
+local generatedMap = folder(
+    workspace,
+    "GeneratedMap"
+)
+
+local areasFolder = folder(
+    generatedMap,
+    "Areas"
+)
+
+local objectsFolder = folder(
+    generatedMap,
+    "Objects"
+)
+
+local npcsFolder = folder(
+    generatedMap,
+    "NPCs"
+)
+
+local spawnsFolder = folder(
+    generatedMap,
+    "Spawns"
+)
+
+--------------------------------------------------
+-- ÁREAS
+--------------------------------------------------
+
+local positions = {
+    Vector3.new(0, 0, 0),
+    Vector3.new(120, 0, 0),
+    Vector3.new(-120, 0, 0),
+    Vector3.new(0, 0, 120),
+    Vector3.new(0, 0, -120),
+    Vector3.new(120, 0, 120),
+    Vector3.new(-120, 0, -120)
+}
+
+for i, area in ipairs(PROJECT.areas or {}) do
+
+    local name
+
+    if typeof(area) == "string" then
+        name = area
+    else
+        name = area.name or area.nome or ("Area_" .. i)
+    end
+
+    local position =
+        positions[i]
+        or Vector3.new(i * 100, 0, 0)
+
+    local zone = part(
+        areasFolder,
+        name,
+        position + Vector3.new(0, -5, 0),
+        Vector3.new(80, 10, 80)
+    )
+
+    zone.Material = Enum.Material.Grass
+
+    zone:SetAttribute(
+        "GeneratedBy",
+        "Roblox AI Studio"
+    )
+end
+
+--------------------------------------------------
+-- OBJETOS
+--------------------------------------------------
+
+for i, object in ipairs(PROJECT.objects or {}) do
+
+    local name
+
+    if typeof(object) == "string" then
+        name = object
+    else
+        name =
+            object.name
+            or object.nome
+            or ("Object_" .. i)
+    end
+
+    local p = part(
+        objectsFolder,
+        name,
+        Vector3.new(i * 12, 3, 0),
+        Vector3.new(8, 6, 8)
+    )
+
+    p:SetAttribute(
+        "GeneratedBy",
+        "Roblox AI Studio"
+    )
+
+    if typeof(object) == "table" then
+
+        p:SetAttribute(
+            "Type",
+            tostring(
+                object.type
+                or object.tipo
+                or "Object"
+            )
+        )
+    end
+end
+
+--------------------------------------------------
+-- NPCS
+--------------------------------------------------
+
+for i, npc in ipairs(PROJECT.npcs or {}) do
+
+    local name
+    local hp = 100
+
+    if typeof(npc) == "string" then
+
+        name = npc
+
+    else
+
+        name =
+            npc.name
+            or npc.nome
+            or ("NPC_" .. i)
+
+        hp =
+            tonumber(
+                npc.hp
+                or npc.health
+                or npc.vida
+                or 100
+            )
+            or 100
+    end
+
+    local model = Instance.new("Model")
+
+    model.Name = name
+
+    local root = Instance.new("Part")
+
+    root.Name = "HumanoidRootPart"
+    root.Size = Vector3.new(2, 2, 1)
+    root.Position = Vector3.new(
+        i * 15,
+        5,
+        20
+    )
+
+    root.Transparency = 1
+    root.CanCollide = false
+    root.Anchored = false
+
+    root.Parent = model
+
+    local body = Instance.new("Part")
+
+    body.Name = "Body"
+    body.Size = Vector3.new(4, 5, 2)
+    body.Position = root.Position + Vector3.new(0, 2, 0)
+
+    body.Anchored = false
+    body.Parent = model
+
+    local head = Instance.new("Part")
+
+    head.Name = "Head"
+    head.Shape = Enum.PartType.Ball
+    head.Size = Vector3.new(2, 2, 2)
+    head.Position = root.Position + Vector3.new(0, 5.5, 0)
+
+    head.Anchored = false
+    head.Parent = model
+
+    local humanoid = Instance.new("Humanoid")
+
+    humanoid.MaxHealth = hp
+    humanoid.Health = hp
+
+    humanoid.Parent = model
+
+    local weld1 = Instance.new("WeldConstraint")
+
+    weld1.Part0 = root
+    weld1.Part1 = body
+    weld1.Parent = root
+
+    local weld2 = Instance.new("WeldConstraint")
+
+    weld2.Part0 = root
+    weld2.Part1 = head
+    weld2.Parent = root
+
+    model.PrimaryPart = root
+
+    model:SetAttribute(
+        "GeneratedBy",
+        "Roblox AI Studio"
+    )
+
+    model:SetAttribute(
+        "Health",
+        hp
+    )
+
+    model.Parent = npcsFolder
+end
+
+--------------------------------------------------
+-- SPAWN
+--------------------------------------------------
+
+local spawn = Instance.new("SpawnLocation")
+
+spawn.Name = "MainSpawn"
+spawn.Size = Vector3.new(8, 1, 8)
+spawn.Position = Vector3.new(0, 5, 0)
+
+spawn.Anchored = true
+spawn.Neutral = true
+
+spawn.Parent = spawnsFolder
+
+--------------------------------------------------
+-- REPLICATED STORAGE
+--------------------------------------------------
+
+local aiFolder = folder(
+    replicated,
+    "RobloxAI"
+)
+
+local remotesFolder = folder(
+    aiFolder,
+    "Remotes"
+)
+
+local modulesFolder = folder(
+    aiFolder,
+    "Modules"
+)
+
+--------------------------------------------------
+-- REMOTES
+--------------------------------------------------
+
+local defaultRemotes = {
+    "Attack",
+    "BuyItem",
+    "ClaimQuest",
+    "EquipPet",
+    "Inventory",
+    "SystemMessage"
+}
+
+for _, remoteName in ipairs(defaultRemotes) do
+
+    local remote = Instance.new("RemoteEvent")
+
+    remote.Name = remoteName
+    remote.Parent = remotesFolder
+end
+
+for _, remoteData in ipairs(PROJECT.remotes or {}) do
+
+    local name
+
+    if typeof(remoteData) == "string" then
+        name = remoteData
+    else
+        name =
+            remoteData.name
+            or remoteData.nome
+    end
+
+    if name and not remotesFolder:FindFirstChild(name) then
+
+        local remote = Instance.new("RemoteEvent")
+
+        remote.Name = name
+        remote.Parent = remotesFolder
+    end
+end
+
+--------------------------------------------------
+-- CONFIGURAÇÃO
+--------------------------------------------------
+
+local config = Instance.new("Configuration")
+
+config.Name = "GameConfig"
+
+config:SetAttribute(
+    "GameName",
+    PROJECT.title or "Roblox AI Game"
+)
+
+config:SetAttribute(
+    "Genre",
+    PROJECT.genre or "Aventura"
+)
+
+config:SetAttribute(
+    "Objective",
+    PROJECT.objective or ""
+)
+
+config:SetAttribute(
+    "Players",
+    PROJECT.players or 10
+)
+
+config.Parent = aiFolder
+
+--------------------------------------------------
+-- INFORMAÇÕES DO PROJETO
+--------------------------------------------------
+
+local infoFolder = folder(
+    aiFolder,
+    "ProjectInfo"
+)
+
+for i, quest in ipairs(PROJECT.quests or {}) do
+
+    local name
+
+    if typeof(quest) == "string" then
+        name = quest
+    else
+        name =
+            quest.name
+            or quest.nome
+            or ("Quest_" .. i)
+    end
+
+    stringValue(
+        infoFolder,
+        "Quest_" .. i,
+        name
+    )
+end
+
+for i, item in ipairs(PROJECT.items or {}) do
+
+    local name
+
+    if typeof(item) == "string" then
+        name = item
+    else
+        name =
+            item.name
+            or item.nome
+            or ("Item_" .. i)
+    end
+
+    stringValue(
+        infoFolder,
+        "Item_" .. i,
+        name
+    )
+end
+
+for i, pet in ipairs(PROJECT.pets or {}) do
+
+    local name
+
+    if typeof(pet) == "string" then
+        name = pet
+    else
+        name =
+            pet.name
+            or pet.nome
+            or ("Pet_" .. i)
+    end
+
+    stringValue(
+        infoFolder,
+        "Pet_" .. i,
+        name
+    )
+end
+
+--------------------------------------------------
+-- LIGHTING
+--------------------------------------------------
+
+Lighting.ClockTime = 14
+Lighting.Brightness = 2
+
+--------------------------------------------------
+-- FINAL
+--------------------------------------------------
+
+print("--------------------------------")
+print("ROBLOX AI STUDIO")
+print("Jogo criado:", PROJECT.title)
+print("Áreas:", #PROJECT.areas)
+print("Objetos:", #PROJECT.objects)
+print("NPCs:", #PROJECT.npcs)
+print("Sistemas:", #PROJECT.systems)
+print("Quests:", #PROJECT.quests)
+print("Itens:", #PROJECT.items)
+print("Pets:", #PROJECT.pets)
+print("--------------------------------")
+
+print("✅ Builder concluído!")
+`;
+}
+
+async function chamarGemini(prompt) {
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "GEMINI_API_KEY não configurada no Vercel."
+    );
+  }
+
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    MODELO +
+    ":generateContent?key=" +
+    encodeURIComponent(apiKey);
+
+  const body = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: prompt
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      responseMimeType: "application/json"
+    }
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      "Gemini HTTP " +
+      response.status +
+      ": " +
+      text
+    );
+  }
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(
+      "Resposta inválida da Gemini."
+    );
+  }
+
+  const result =
+    data.candidates &&
+    data.candidates[0] &&
+    data.candidates[0].content &&
+    data.candidates[0].content.parts &&
+    data.candidates[0].content.parts[0] &&
+    data.candidates[0].content.parts[0].text;
+
+  if (!result) {
+    throw new Error(
+      "Gemini não retornou conteúdo."
+    );
+  }
+
+  return result;
+}
+
 module.exports = async function handler(req, res) {
+
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Use POST."
-    });
+
+    return resposta(
+      res,
+      405,
+      {
+        erro: "Método não permitido."
+      }
+    );
   }
 
   try {
-    const { ideia, modo = "jogo_completo" } = req.body || {};
 
-    if (!ideia || typeof ideia !== "string") {
-      return res.status(400).json({
-        error: "Digite uma ideia para o jogo."
-      });
-    }
+    const body = req.body || {};
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const ideia =
+      String(body.ideia || "").trim();
 
-    if (!apiKey) {
-      return res.status(500).json({
-        error: "GEMINI_API_KEY não configurada na Vercel."
-      });
+    if (!ideia) {
+
+      return resposta(
+        res,
+        400,
+        {
+          erro: "Digite uma ideia para o jogo."
+        }
+      );
     }
 
     const prompt = `
-Você é um desenvolvedor SENIOR de Roblox Studio especializado em Luau.
+Você é uma IA especialista em criação de jogos para Roblox.
 
-Sua missão é transformar a ideia do usuário em um projeto completo de Roblox.
-
-MODO:
-${modo}
+Sua tarefa é transformar a ideia abaixo em um projeto de jogo completo e organizado.
 
 IDEIA DO USUÁRIO:
-${ideia.trim().slice(0, 8000)}
+${ideia}
 
-========================================
-REGRAS OBRIGATÓRIAS
-========================================
+Retorne SOMENTE JSON válido.
 
-RESPONDA SOMENTE COM JSON VÁLIDO.
-
-NÃO use Markdown.
-NÃO use \`\`\`.
-NÃO escreva explicações fora do JSON.
-
-Use somente Luau e APIs reais do Roblox.
-
-Não use:
-- require de IDs externos
-- código externo
-- URLs externas
-- executores
-- exploits
-- APIs inexistentes
-- serviços inexistentes
-- código para burlar sistemas do Roblox
-
-O projeto deve funcionar sem plugins externos.
-
-Todos os scripts devem ser completos e executáveis.
-
-========================================
-SISTEMAS
-========================================
-
-Analise a ideia e crie os sistemas necessários.
-
-Quando fizer sentido, inclua:
-
-- moedas
-- XP
-- níveis
-- inventário
-- loja
-- pets
-- missões
-- combate
-- inimigos
-- boss
-- drops
-- respawn
-- checkpoints
-- teleporte
-- áreas desbloqueáveis
-- eventos
-- leaderboard
-- salvamento de dados
-- sistema de recompensa
-- interface
-- dia e noite
-- spawn
-- sistema de progressão
-
-Não force sistemas que não combinam com o jogo.
-
-========================================
-MAPA
-========================================
-
-Crie um mapa coerente com a ideia.
-
-Inclua:
-
-- Spawn
-- áreas
-- terrenos
-- construções
-- obstáculos
-- plataformas
-- caminhos
-- estruturas
-- locais importantes
-- áreas de combate
-- área de boss quando necessário
-- área de loja quando necessário
-
-O Builder deve construir o máximo possível usando:
-
-Instance.new()
-Vector3.new()
-CFrame.new()
-
-Não dependa de modelos externos.
-
-========================================
-NPCS
-========================================
-
-Crie NPCs quando forem necessários.
-
-Cada NPC pode ter:
-
-- nome
-- tipo
-- vida
-- dano
-- velocidade
-- comportamento
-- posição
-- função
-
-Tipos possíveis:
-
-Enemy
-Boss
-Shopkeeper
-QuestGiver
-Friendly
-Pet
-Other
-
-========================================
-BUILDER
-========================================
-
-O builder_script precisa:
-
-1. Criar Workspace.GeneratedMap.
-2. Criar todos os objetos possíveis.
-3. Criar as áreas.
-4. Criar SpawnLocation.
-5. Criar estruturas.
-6. Criar obstáculos.
-7. Criar plataformas.
-8. Criar NPCs básicos.
-9. Organizar objetos em Models/Folders.
-10. Configurar:
-   Name
-   Size
-   Position
-   Anchored
-   CanCollide
-   Material
-   Transparency
-11. Usar funções para evitar repetição.
-12. Ser executável diretamente no Roblox Studio.
-
-O builder não deve depender de assets externos.
-
-========================================
-SCRIPTS
-========================================
-
-Crie scripts separados quando necessário.
-
-Possíveis locais:
-
-ServerScriptService
-ServerStorage
-ReplicatedStorage
-StarterPlayerScripts
-StarterGui
-Workspace
-
-Tipos:
-
-Script
-LocalScript
-ModuleScript
-
-Cada script deve possuir:
-
-name
-location
-type
-description
-code
-
-========================================
-REMOTES
-========================================
-
-Quando necessário, crie RemoteEvents e RemoteFunctions.
-
-Eles devem ficar organizados em:
-
-ReplicatedStorage
-  Remotes
-
-Não crie remotes desnecessários.
-
-========================================
-INTERFACE
-========================================
-
-Quando necessário, crie sistemas de UI.
-
-Exemplos:
-
-- contador de moedas
-- XP
-- nível
-- loja
-- inventário
-- missões
-- pets
-- boss
-- notificações
-
-========================================
-DATASTORE
-========================================
-
-Quando o jogo possuir progresso, gere um sistema básico de DataStoreService.
-
-O código deve incluir tratamento de erros com pcall.
-
-Não use dados externos.
-
-========================================
-FORMATO JSON
-========================================
-
-Retorne exatamente esta estrutura:
+Use exatamente esta estrutura:
 
 {
-  "game_name": "Nome",
-
-  "description": "Descrição",
-
+  "title": "Nome do jogo",
   "genre": "Gênero",
+  "objective": "Objetivo principal",
+  "difficulty": "Fácil, Médio ou Difícil",
+  "players": 10,
 
-  "objective": "Objetivo",
-
-  "difficulty": "Fácil/Médio/Difícil",
-
-  "estimated_players": "Quantidade",
-
-  "map": {
-    "description": "Descrição do mapa",
-
-    "areas": [
-      {
-        "name": "Área",
-        "description": "Descrição",
-        "type": "Spawn/Combat/Shop/Boss/etc"
-      }
-    ]
-  },
+  "areas": [
+    {
+      "name": "Nome da área",
+      "description": "Descrição"
+    }
+  ],
 
   "objects": [
     {
-      "name": "Objeto",
-      "type": "Part",
-      "description": "Descrição",
-      "position": [0, 5, 0],
-      "size": [10, 1, 10],
-      "material": "Grass",
-      "anchored": true,
-      "can_collide": true,
-      "transparency": 0
+      "name": "Nome do objeto",
+      "type": "Structure",
+      "description": "Descrição"
     }
   ],
 
   "npcs": [
     {
-      "name": "NPC",
+      "name": "Nome do NPC",
       "type": "Enemy",
-      "health": 100,
-      "damage": 10,
-      "speed": 16,
-      "position": [0, 5, 0],
-      "description": "Comportamento"
+      "hp": 100,
+      "description": "Descrição"
     }
   ],
 
   "systems": [
     {
-      "name": "Sistema",
-      "description": "Como funciona",
-      "priority": "Alta"
+      "name": "Nome do sistema",
+      "description": "Como funciona"
     }
   ],
 
   "quests": [
     {
-      "name": "Missão",
-      "description": "Descrição",
-      "objective": "Objetivo",
-      "reward": "Recompensa"
+      "name": "Nome da missão",
+      "description": "Objetivo",
+      "reward": 100
     }
   ],
 
   "items": [
     {
-      "name": "Item",
-      "type": "Weapon/Tool/Pet/Consumable/Other",
-      "description": "Descrição",
-      "price": 100
+      "name": "Nome do item",
+      "rarity": "Common",
+      "description": "Descrição"
     }
   ],
 
   "shops": [
     {
-      "name": "Loja",
-      "description": "Descrição",
+      "name": "Nome da loja",
       "items": ["Item 1", "Item 2"]
     }
   ],
 
   "pets": [
     {
-      "name": "Pet",
-      "rarity": "Common",
-      "description": "Descrição",
-      "bonus": "Bônus"
+      "name": "Nome do pet",
+      "ability": "Habilidade"
     }
   ],
 
-  "builder_script": {
-    "name": "MapBuilder",
-    "description": "Construtor automático",
-    "code": "CÓDIGO LUA COMPLETO"
-  },
-
-  "scripts": [
+  "remotes": [
     {
-      "name": "Script",
-      "location": "ServerScriptService",
-      "type": "Script",
-      "description": "Descrição",
-      "code": "CÓDIGO LUA COMPLETO"
-    }
-  ],
-
-  "recommended_remotes": [
-    {
-      "name": "Remote",
-      "type": "RemoteEvent",
+      "name": "NomeDoRemote",
       "description": "Função"
     }
   ],
 
-  "steps": [
-    "Passo 1",
-    "Passo 2",
-    "Passo 3"
-  ],
+  "scripts": [],
 
-  "future_upgrades": [
-    "Upgrade 1",
-    "Upgrade 2",
-    "Upgrade 3"
+  "next_upgrades": [
+    "Melhoria futura 1",
+    "Melhoria futura 2",
+    "Melhoria futura 3"
   ]
 }
 
-========================================
-QUALIDADE DO CÓDIGO
-========================================
+REGRAS:
 
-O código Luau deve:
-
-- ser legível
-- possuir comentários úteis
-- evitar variáveis globais
-- usar funções
-- validar entradas do jogador
-- evitar loops infinitos
-- tratar erros importantes
-- funcionar no Roblox Studio
-- não depender de código externo
-
-Para posições use:
-
-Vector3.new(x, y, z)
-
-Para criar objetos:
-
-Instance.new("Part")
-
-Para NPCs básicos, use Model e Parts.
-
-========================================
-IMPORTANTE
-========================================
-
-Gere uma quantidade razoável de objetos e scripts.
-
-Não gere milhares de objetos desnecessários.
-
-Priorize qualidade e funcionamento.
-
-Agora gere o projeto.
+1. Crie entre 3 e 8 áreas.
+2. Crie entre 5 e 15 objetos.
+3. Crie entre 3 e 10 NPCs.
+4. Crie sistemas coerentes com o gênero.
+5. Crie pelo menos 3 missões.
+6. Crie pelo menos 5 itens.
+7. Crie pelo menos 1 loja quando fizer sentido.
+8. Crie pets quando fizer sentido.
+9. Crie RemoteEvents relacionados aos sistemas.
+10. Não coloque código Lua dentro do JSON.
+11. Não escreva explicações fora do JSON.
+12. Tudo deve estar relacionado à ideia do usuário.
+13. O jogo deve ser possível de implementar no Roblox Studio.
 `;
 
-    const modelos = [
-      "gemini-3.6-flash",
-      "gemini-3.6-flash-lite"
-    ];
+    const raw = await chamarGemini(prompt);
 
-    let ultimoErro = null;
+    let projeto;
 
-    for (const modelo of modelos) {
+    try {
 
-      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+      projeto = JSON.parse(raw);
 
-        try {
+    } catch {
 
-          console.log(
-            "Gemini:",
-            modelo,
-            "Tentativa:",
-            tentativa
-          );
+      const inicio = raw.indexOf("{");
+      const fim = raw.lastIndexOf("}");
 
-          const resposta = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey
-              },
-
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: prompt
-                      }
-                    ]
-                  }
-                ],
-
-                generationConfig: {
-                  responseMimeType: "application/json",
-                  temperature: 0.7
-                }
-              })
-            }
-          );
-
-          const dados = await resposta.json();
-
-          console.log(
-            "Status Gemini:",
-            resposta.status
-          );
-
-          if (resposta.ok) {
-
-            const texto =
-              dados?.candidates?.[0]
-                ?.content
-                ?.parts?.[0]
-                ?.text;
-
-            if (!texto) {
-              ultimoErro =
-                "A Gemini não retornou conteúdo.";
-              continue;
-            }
-
-            let projeto;
-
-            try {
-
-              projeto = JSON.parse(texto);
-
-            } catch (erro) {
-
-              console.error(
-                "JSON inválido:",
-                texto
-              );
-
-              ultimoErro =
-                "A Gemini retornou JSON inválido.";
-
-              continue;
-            }
-
-            projeto.game_name =
-              projeto.game_name ||
-              "Meu Jogo Roblox";
-
-            projeto.description =
-              projeto.description ||
-              "Jogo criado pela Roblox AI Studio.";
-
-            projeto.genre =
-              projeto.genre ||
-              "Adventure";
-
-            projeto.objective =
-              projeto.objective ||
-              "Divirta-se e complete o objetivo.";
-
-            projeto.map =
-              projeto.map || {
-                description: "Mapa gerado pela IA.",
-                areas: []
-              };
-
-            if (!Array.isArray(projeto.map.areas)) {
-              projeto.map.areas = [];
-            }
-
-            if (!Array.isArray(projeto.objects)) {
-              projeto.objects = [];
-            }
-
-            if (!Array.isArray(projeto.npcs)) {
-              projeto.npcs = [];
-            }
-
-            if (!Array.isArray(projeto.systems)) {
-              projeto.systems = [];
-            }
-
-            if (!Array.isArray(projeto.quests)) {
-              projeto.quests = [];
-            }
-
-            if (!Array.isArray(projeto.items)) {
-              projeto.items = [];
-            }
-
-            if (!Array.isArray(projeto.shops)) {
-              projeto.shops = [];
-            }
-
-            if (!Array.isArray(projeto.pets)) {
-              projeto.pets = [];
-            }
-
-            if (!Array.isArray(projeto.scripts)) {
-              projeto.scripts = [];
-            }
-
-            if (!Array.isArray(projeto.recommended_remotes)) {
-              projeto.recommended_remotes = [];
-            }
-
-            if (!Array.isArray(projeto.steps)) {
-              projeto.steps = [];
-            }
-
-            if (!Array.isArray(projeto.future_upgrades)) {
-              projeto.future_upgrades = [];
-            }
-
-            projeto.builder_script =
-              projeto.builder_script || {
-                name: "MapBuilder",
-                description:
-                  "Construtor automático do mapa.",
-                code:
-                  "-- Builder não gerado."
-              };
-
-            console.log(
-              "Projeto criado:",
-              projeto.game_name
-            );
-
-            return res.status(200).json(projeto);
-          }
-
-          const mensagem =
-            dados?.error?.message ||
-            "Erro desconhecido na Gemini.";
-
-          ultimoErro = mensagem;
-
-          console.error(
-            "Erro Gemini:",
-            mensagem
-          );
-
-          if (
-            resposta.status === 400 ||
-            resposta.status === 401 ||
-            resposta.status === 403
-          ) {
-            return res.status(500).json({
-              error:
-                "Erro na configuração da Gemini.",
-              details: mensagem
-            });
-          }
-
-          if (resposta.status === 404) {
-            break;
-          }
-
-          if (
-            resposta.status === 429 ||
-            resposta.status === 500 ||
-            resposta.status === 502 ||
-            resposta.status === 503 ||
-            resposta.status === 504 ||
-            mensagem.toLowerCase().includes("high demand") ||
-            mensagem.toLowerCase().includes("overloaded") ||
-            mensagem.toLowerCase().includes("temporarily")
-          ) {
-
-            const espera =
-              tentativa * 2000;
-
-            await new Promise(
-              resolve =>
-                setTimeout(
-                  resolve,
-                  espera
-                )
-            );
-
-            continue;
-          }
-
-          break;
-
-        } catch (erro) {
-
-          console.error(
-            "Erro de conexão:",
-            erro
-          );
-
-          ultimoErro =
-            erro.message;
-
-          await new Promise(
-            resolve =>
-              setTimeout(
-                resolve,
-                tentativa * 2000
-              )
-          );
-        }
+      if (
+        inicio === -1 ||
+        fim === -1 ||
+        fim <= inicio
+      ) {
+        throw new Error(
+          "A Gemini retornou JSON inválido."
+        );
       }
+
+      projeto = JSON.parse(
+        raw.substring(
+          inicio,
+          fim + 1
+        )
+      );
     }
 
-    return res.status(503).json({
-      error:
-        "A IA está temporariamente ocupada.",
-      details:
-        ultimoErro ||
-        "Tente novamente em alguns segundos."
-    });
+    projeto = limparProjeto(projeto);
 
-  } catch (erro) {
+    projeto.builder_script =
+      gerarBuilder(projeto);
+
+    projeto.generated_by =
+      "Roblox AI Studio";
+
+    return resposta(
+      res,
+      200,
+      {
+        sucesso: true,
+        projeto
+      }
+    );
+
+  } catch (error) {
 
     console.error(
       "ERRO INTERNO:",
-      erro
+      error
     );
 
-    return res.status(500).json({
-      error:
-        "Erro interno do servidor.",
-      details:
-        erro.message
-    });
+    return resposta(
+      res,
+      500,
+      {
+        sucesso: false,
+        erro:
+          "Não foi possível gerar o jogo.",
+        detalhe:
+          error.message
+      }
+    );
   }
 };
