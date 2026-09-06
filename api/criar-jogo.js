@@ -1,575 +1,86 @@
-const MODELO = "gemini-3.6-flash";
+const MODELO = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+
+const MAX_REVISIONS = 2;
+const MAX_SCRIPTS = 30;
 
 function resposta(res, status, dados) {
-  res.status(status).json(dados);
+  return res.status(status).json(dados);
 }
 
-function limparProjeto(projeto) {
-  return {
-    title: projeto.title || "Meu Jogo Roblox",
-    genre: projeto.genre || "Aventura",
-    objective: projeto.objective || "",
-    difficulty: projeto.difficulty || "Médio",
-    players: Number(projeto.players) || 10,
-
-    areas: Array.isArray(projeto.areas)
-      ? projeto.areas
-      : [],
-
-    objects: Array.isArray(projeto.objects)
-      ? projeto.objects
-      : [],
-
-    npcs: Array.isArray(projeto.npcs)
-      ? projeto.npcs
-      : [],
-
-    systems: Array.isArray(projeto.systems)
-      ? projeto.systems
-      : [],
-
-    quests: Array.isArray(projeto.quests)
-      ? projeto.quests
-      : [],
-
-    items: Array.isArray(projeto.items)
-      ? projeto.items
-      : [],
-
-    shops: Array.isArray(projeto.shops)
-      ? projeto.shops
-      : [],
-
-    pets: Array.isArray(projeto.pets)
-      ? projeto.pets
-      : [],
-
-    remotes: Array.isArray(projeto.remotes)
-      ? projeto.remotes
-      : [],
-
-    scripts: Array.isArray(projeto.scripts)
-      ? projeto.scripts
-      : [],
-
-    next_upgrades: Array.isArray(projeto.next_upgrades)
-      ? projeto.next_upgrades
-      : []
-  };
+function texto(valor, fallback = "") {
+  if (valor === undefined || valor === null) return fallback;
+  return String(valor);
 }
 
-function gerarBuilder(projeto) {
-
-  const dados = JSON.stringify(projeto)
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\r?\n/g, "\\n");
-
-  return `-- ROBLOX AI BUILDER
--- Gerado pelo Roblox AI Studio
-
-local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
-
-local PROJECT_JSON = "${dados}"
-
-local PROJECT
-
-local ok, result = pcall(function()
-    return HttpService:JSONDecode(PROJECT_JSON)
-end)
-
-if not ok then
-    warn("[Roblox AI] Erro ao ler projeto:", result)
-    return
-end
-
---------------------------------------------------
--- FUNÇÕES
---------------------------------------------------
-
-local function folder(parent, name)
-
-    local old = parent:FindFirstChild(name)
-
-    if old then
-        old:Destroy()
-    end
-
-    local f = Instance.new("Folder")
-    f.Name = name
-    f.Parent = parent
-
-    return f
-end
-
-local function part(parent, name, position, size)
-
-    local p = Instance.new("Part")
-
-    p.Name = name
-    p.Position = position
-    p.Size = size
-
-    p.Anchored = true
-    p.CanCollide = true
-
-    p.Parent = parent
-
-    return p
-end
-
-local function stringValue(parent, name, value)
-
-    local v = Instance.new("StringValue")
-
-    v.Name = name
-    v.Value = tostring(value or "")
-
-    v.Parent = parent
-
-    return v
-end
-
---------------------------------------------------
--- LIMPAR PROJETO ANTERIOR
---------------------------------------------------
-
-local oldMap = workspace:FindFirstChild("GeneratedMap")
-
-if oldMap then
-    oldMap:Destroy()
-end
-
-local replicated = game:GetService("ReplicatedStorage")
-
-local oldAI = replicated:FindFirstChild("RobloxAI")
-
-if oldAI then
-    oldAI:Destroy()
-end
-
---------------------------------------------------
--- WORKSPACE
---------------------------------------------------
-
-local generatedMap = folder(
-    workspace,
-    "GeneratedMap"
-)
-
-local areasFolder = folder(
-    generatedMap,
-    "Areas"
-)
-
-local objectsFolder = folder(
-    generatedMap,
-    "Objects"
-)
-
-local npcsFolder = folder(
-    generatedMap,
-    "NPCs"
-)
-
-local spawnsFolder = folder(
-    generatedMap,
-    "Spawns"
-)
-
---------------------------------------------------
--- ÁREAS
---------------------------------------------------
-
-local positions = {
-    Vector3.new(0, 0, 0),
-    Vector3.new(120, 0, 0),
-    Vector3.new(-120, 0, 0),
-    Vector3.new(0, 0, 120),
-    Vector3.new(0, 0, -120),
-    Vector3.new(120, 0, 120),
-    Vector3.new(-120, 0, -120)
+function arraySeguro(valor) {
+  return Array.isArray(valor) ? valor : [];
 }
 
-for i, area in ipairs(PROJECT.areas or {}) do
+function limparNome(nome, fallback) {
+  const valor = texto(nome, fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*]/g, "_");
 
-    local name
+  return valor || fallback;
+}
 
-    if typeof(area) == "string" then
-        name = area
-    else
-        name = area.name or area.nome or ("Area_" .. i)
-    end
+/*
+|--------------------------------------------------------------------------
+| JSON
+|--------------------------------------------------------------------------
+*/
 
-    local position =
-        positions[i]
-        or Vector3.new(i * 100, 0, 0)
+function extrairJSON(raw) {
+  if (!raw || typeof raw !== "string") {
+    throw new Error("A IA não retornou texto.");
+  }
 
-    local zone = part(
-        areasFolder,
-        name,
-        position + Vector3.new(0, -5, 0),
-        Vector3.new(80, 10, 80)
-    )
+  let textoResposta = raw.trim();
 
-    zone.Material = Enum.Material.Grass
+  textoResposta = textoResposta
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
 
-    zone:SetAttribute(
-        "GeneratedBy",
-        "Roblox AI Studio"
-    )
-end
+  try {
+    return JSON.parse(textoResposta);
+  } catch (_) {
+    const inicioObjeto = textoResposta.indexOf("{");
+    const fimObjeto = textoResposta.lastIndexOf("}");
 
---------------------------------------------------
--- OBJETOS
---------------------------------------------------
-
-for i, object in ipairs(PROJECT.objects or {}) do
-
-    local name
-
-    if typeof(object) == "string" then
-        name = object
-    else
-        name =
-            object.name
-            or object.nome
-            or ("Object_" .. i)
-    end
-
-    local p = part(
-        objectsFolder,
-        name,
-        Vector3.new(i * 12, 3, 0),
-        Vector3.new(8, 6, 8)
-    )
-
-    p:SetAttribute(
-        "GeneratedBy",
-        "Roblox AI Studio"
-    )
-
-    if typeof(object) == "table" then
-
-        p:SetAttribute(
-            "Type",
-            tostring(
-                object.type
-                or object.tipo
-                or "Object"
-            )
+    if (inicioObjeto !== -1 && fimObjeto > inicioObjeto) {
+      return JSON.parse(
+        textoResposta.substring(
+          inicioObjeto,
+          fimObjeto + 1
         )
-    end
-end
+      );
+    }
 
---------------------------------------------------
--- NPCS
---------------------------------------------------
+    const inicioArray = textoResposta.indexOf("[");
+    const fimArray = textoResposta.lastIndexOf("]");
 
-for i, npc in ipairs(PROJECT.npcs or {}) do
+    if (inicioArray !== -1 && fimArray > inicioArray) {
+      return JSON.parse(
+        textoResposta.substring(
+          inicioArray,
+          fimArray + 1
+        )
+      );
+    }
 
-    local name
-    local hp = 100
-
-    if typeof(npc) == "string" then
-
-        name = npc
-
-    else
-
-        name =
-            npc.name
-            or npc.nome
-            or ("NPC_" .. i)
-
-        hp =
-            tonumber(
-                npc.hp
-                or npc.health
-                or npc.vida
-                or 100
-            )
-            or 100
-    end
-
-    local model = Instance.new("Model")
-
-    model.Name = name
-
-    local root = Instance.new("Part")
-
-    root.Name = "HumanoidRootPart"
-    root.Size = Vector3.new(2, 2, 1)
-    root.Position = Vector3.new(
-        i * 15,
-        5,
-        20
-    )
-
-    root.Transparency = 1
-    root.CanCollide = false
-    root.Anchored = false
-
-    root.Parent = model
-
-    local body = Instance.new("Part")
-
-    body.Name = "Body"
-    body.Size = Vector3.new(4, 5, 2)
-    body.Position = root.Position + Vector3.new(0, 2, 0)
-
-    body.Anchored = false
-    body.Parent = model
-
-    local head = Instance.new("Part")
-
-    head.Name = "Head"
-    head.Shape = Enum.PartType.Ball
-    head.Size = Vector3.new(2, 2, 2)
-    head.Position = root.Position + Vector3.new(0, 5.5, 0)
-
-    head.Anchored = false
-    head.Parent = model
-
-    local humanoid = Instance.new("Humanoid")
-
-    humanoid.MaxHealth = hp
-    humanoid.Health = hp
-
-    humanoid.Parent = model
-
-    local weld1 = Instance.new("WeldConstraint")
-
-    weld1.Part0 = root
-    weld1.Part1 = body
-    weld1.Parent = root
-
-    local weld2 = Instance.new("WeldConstraint")
-
-    weld2.Part0 = root
-    weld2.Part1 = head
-    weld2.Parent = root
-
-    model.PrimaryPart = root
-
-    model:SetAttribute(
-        "GeneratedBy",
-        "Roblox AI Studio"
-    )
-
-    model:SetAttribute(
-        "Health",
-        hp
-    )
-
-    model.Parent = npcsFolder
-end
-
---------------------------------------------------
--- SPAWN
---------------------------------------------------
-
-local spawn = Instance.new("SpawnLocation")
-
-spawn.Name = "MainSpawn"
-spawn.Size = Vector3.new(8, 1, 8)
-spawn.Position = Vector3.new(0, 5, 0)
-
-spawn.Anchored = true
-spawn.Neutral = true
-
-spawn.Parent = spawnsFolder
-
---------------------------------------------------
--- REPLICATED STORAGE
---------------------------------------------------
-
-local aiFolder = folder(
-    replicated,
-    "RobloxAI"
-)
-
-local remotesFolder = folder(
-    aiFolder,
-    "Remotes"
-)
-
-local modulesFolder = folder(
-    aiFolder,
-    "Modules"
-)
-
---------------------------------------------------
--- REMOTES
---------------------------------------------------
-
-local defaultRemotes = {
-    "Attack",
-    "BuyItem",
-    "ClaimQuest",
-    "EquipPet",
-    "Inventory",
-    "SystemMessage"
+    throw new Error("A IA retornou JSON inválido.");
+  }
 }
 
-for _, remoteName in ipairs(defaultRemotes) do
+/*
+|--------------------------------------------------------------------------
+| GEMINI
+|--------------------------------------------------------------------------
+*/
 
-    local remote = Instance.new("RemoteEvent")
-
-    remote.Name = remoteName
-    remote.Parent = remotesFolder
-end
-
-for _, remoteData in ipairs(PROJECT.remotes or {}) do
-
-    local name
-
-    if typeof(remoteData) == "string" then
-        name = remoteData
-    else
-        name =
-            remoteData.name
-            or remoteData.nome
-    end
-
-    if name and not remotesFolder:FindFirstChild(name) then
-
-        local remote = Instance.new("RemoteEvent")
-
-        remote.Name = name
-        remote.Parent = remotesFolder
-    end
-end
-
---------------------------------------------------
--- CONFIGURAÇÃO
---------------------------------------------------
-
-local config = Instance.new("Configuration")
-
-config.Name = "GameConfig"
-
-config:SetAttribute(
-    "GameName",
-    PROJECT.title or "Roblox AI Game"
-)
-
-config:SetAttribute(
-    "Genre",
-    PROJECT.genre or "Aventura"
-)
-
-config:SetAttribute(
-    "Objective",
-    PROJECT.objective or ""
-)
-
-config:SetAttribute(
-    "Players",
-    PROJECT.players or 10
-)
-
-config.Parent = aiFolder
-
---------------------------------------------------
--- INFORMAÇÕES DO PROJETO
---------------------------------------------------
-
-local infoFolder = folder(
-    aiFolder,
-    "ProjectInfo"
-)
-
-for i, quest in ipairs(PROJECT.quests or {}) do
-
-    local name
-
-    if typeof(quest) == "string" then
-        name = quest
-    else
-        name =
-            quest.name
-            or quest.nome
-            or ("Quest_" .. i)
-    end
-
-    stringValue(
-        infoFolder,
-        "Quest_" .. i,
-        name
-    )
-end
-
-for i, item in ipairs(PROJECT.items or {}) do
-
-    local name
-
-    if typeof(item) == "string" then
-        name = item
-    else
-        name =
-            item.name
-            or item.nome
-            or ("Item_" .. i)
-    end
-
-    stringValue(
-        infoFolder,
-        "Item_" .. i,
-        name
-    )
-end
-
-for i, pet in ipairs(PROJECT.pets or {}) do
-
-    local name
-
-    if typeof(pet) == "string" then
-        name = pet
-    else
-        name =
-            pet.name
-            or pet.nome
-            or ("Pet_" .. i)
-    end
-
-    stringValue(
-        infoFolder,
-        "Pet_" .. i,
-        name
-    )
-end
-
---------------------------------------------------
--- LIGHTING
---------------------------------------------------
-
-Lighting.ClockTime = 14
-Lighting.Brightness = 2
-
---------------------------------------------------
--- FINAL
---------------------------------------------------
-
-print("--------------------------------")
-print("ROBLOX AI STUDIO")
-print("Jogo criado:", PROJECT.title)
-print("Áreas:", #PROJECT.areas)
-print("Objetos:", #PROJECT.objects)
-print("NPCs:", #PROJECT.npcs)
-print("Sistemas:", #PROJECT.systems)
-print("Quests:", #PROJECT.quests)
-print("Itens:", #PROJECT.items)
-print("Pets:", #PROJECT.pets)
-print("--------------------------------")
-
-print("✅ Builder concluído!")
-`;
-}
-
-async function chamarGemini(prompt) {
-
+async function chamarGemini(prompt, options = {}) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -578,9 +89,11 @@ async function chamarGemini(prompt) {
     );
   }
 
+  const modelo = options.modelo || MODELO;
+
   const url =
     "https://generativelanguage.googleapis.com/v1beta/models/" +
-    MODELO +
+    modelo +
     ":generateContent?key=" +
     encodeURIComponent(apiKey);
 
@@ -596,8 +109,13 @@ async function chamarGemini(prompt) {
       }
     ],
     generationConfig: {
-      temperature: 0.7,
-      responseMimeType: "application/json"
+      temperature:
+        options.temperature !== undefined
+          ? options.temperature
+          : 0.2,
+
+      responseMimeType:
+        options.responseMimeType || "application/json"
     }
   };
 
@@ -609,34 +127,29 @@ async function chamarGemini(prompt) {
     body: JSON.stringify(body)
   });
 
-  const text = await response.text();
+  const responseText = await response.text();
 
   if (!response.ok) {
     throw new Error(
       "Gemini HTTP " +
       response.status +
       ": " +
-      text
+      responseText
     );
   }
 
   let data;
 
   try {
-    data = JSON.parse(text);
-  } catch {
+    data = JSON.parse(responseText);
+  } catch (_) {
     throw new Error(
-      "Resposta inválida da Gemini."
+      "Resposta da Gemini não é JSON válido."
     );
   }
 
   const result =
-    data.candidates &&
-    data.candidates[0] &&
-    data.candidates[0].content &&
-    data.candidates[0].content.parts &&
-    data.candidates[0].content.parts[0] &&
-    data.candidates[0].content.parts[0].text;
+    data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!result) {
     throw new Error(
@@ -647,48 +160,314 @@ async function chamarGemini(prompt) {
   return result;
 }
 
-module.exports = async function handler(req, res) {
+/*
+|--------------------------------------------------------------------------
+| NORMALIZAÇÃO DO PROJETO
+|--------------------------------------------------------------------------
+*/
 
-  if (req.method !== "POST") {
+function normalizarProjeto(projeto) {
+  projeto = projeto || {};
 
-    return resposta(
-      res,
-      405,
-      {
-        erro: "Método não permitido."
-      }
+  return {
+    title: texto(
+      projeto.title || projeto.game_name,
+      "Meu Jogo Roblox"
+    ),
+
+    genre: texto(
+      projeto.genre,
+      "Aventura"
+    ),
+
+    objective: texto(
+      projeto.objective,
+      ""
+    ),
+
+    difficulty: texto(
+      projeto.difficulty,
+      "Médio"
+    ),
+
+    players:
+      Number(projeto.players) ||
+      Number(projeto.estimated_players) ||
+      10,
+
+    areas: arraySeguro(projeto.areas),
+
+    objects: arraySeguro(projeto.objects),
+
+    npcs: arraySeguro(projeto.npcs),
+
+    systems: arraySeguro(projeto.systems),
+
+    quests: arraySeguro(projeto.quests),
+
+    items: arraySeguro(projeto.items),
+
+    shops: arraySeguro(projeto.shops),
+
+    pets: arraySeguro(projeto.pets),
+
+    remotes: arraySeguro(projeto.remotes),
+
+    scripts: arraySeguro(projeto.scripts),
+
+    next_upgrades:
+      arraySeguro(projeto.next_upgrades)
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| NORMALIZAÇÃO DE SCRIPT
+|--------------------------------------------------------------------------
+|
+| Cada script agora possui:
+|
+| name
+| type
+| location
+| dependencies
+| description
+| code
+| purpose
+|
+*/
+
+function normalizarScript(script, index) {
+  script = script || {};
+
+  const tipoOriginal =
+    texto(
+      script.type ||
+      script.script_type ||
+      script.tipo,
+      "Script"
+    );
+
+  const tiposValidos = [
+    "Script",
+    "LocalScript",
+    "ModuleScript"
+  ];
+
+  const type =
+    tiposValidos.includes(tipoOriginal)
+      ? tipoOriginal
+      : "Script";
+
+  const dependencies = arraySeguro(
+    script.dependencies ||
+    script.dependencias
+  ).map((item) => {
+    if (typeof item === "string") {
+      return item;
+    }
+
+    return texto(
+      item?.name ||
+      item?.nome,
+      ""
+    );
+  }).filter(Boolean);
+
+  return {
+    id:
+      texto(
+        script.id,
+        `script_${index + 1}`
+      ),
+
+    name: limparNome(
+      script.name ||
+      script.nome,
+      `GeneratedScript_${index + 1}`
+    ),
+
+    type,
+
+    location:
+      texto(
+        script.location ||
+        script.path ||
+        script.localizacao,
+        type === "LocalScript"
+          ? "StarterPlayer > StarterPlayerScripts"
+          : type === "ModuleScript"
+            ? "ReplicatedStorage > Modules"
+            : "ServerScriptService"
+      ),
+
+    dependencies,
+
+    description:
+      texto(
+        script.description ||
+        script.descricao,
+        ""
+      ),
+
+    purpose:
+      texto(
+        script.purpose ||
+        script.objetivo,
+        ""
+      ),
+
+    code:
+      texto(
+        script.code ||
+        script.codigo,
+        ""
+      ),
+
+    enabled:
+      script.enabled !== false
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| VALIDAÇÃO BÁSICA DO SCRIPT
+|--------------------------------------------------------------------------
+*/
+
+function validarScript(script) {
+  const erros = [];
+  const avisos = [];
+
+  if (!script.name) {
+    erros.push("Script sem nome.");
+  }
+
+  if (!script.type) {
+    erros.push("Script sem tipo.");
+  }
+
+  if (!script.location) {
+    erros.push("Script sem localização.");
+  }
+
+  if (!script.code.trim()) {
+    erros.push("Script sem código.");
+  }
+
+  const codigo = script.code;
+
+  if (
+    codigo.includes("```lua") ||
+    codigo.includes("```luau") ||
+    codigo.includes("```")
+  ) {
+    avisos.push(
+      "O código contém delimitadores Markdown."
     );
   }
 
-  try {
+  if (
+    codigo.includes("TODO") ||
+    codigo.includes("IMPLEMENT_ME")
+  ) {
+    avisos.push(
+      "O código contém marcador de implementação."
+    );
+  }
 
-    const body = req.body || {};
+  if (
+    script.type === "LocalScript" &&
+    /DataStoreService/i.test(codigo)
+  ) {
+    erros.push(
+      "LocalScript não deve acessar DataStoreService diretamente."
+    );
+  }
 
-    const ideia =
-      String(body.ideia || "").trim();
+  if (
+    script.type === "LocalScript" &&
+    /ServerStorage/i.test(codigo)
+  ) {
+    erros.push(
+      "LocalScript não deve acessar ServerStorage."
+    );
+  }
 
-    if (!ideia) {
+  if (
+    /\bgame\s*:\s*GetService\s*\(\s*["']HttpService["']\s*\)/i.test(
+      codigo
+    )
+  ) {
+    avisos.push(
+      "Script utiliza HttpService; confirme se a configuração necessária está habilitada."
+    );
+  }
 
-      return resposta(
-        res,
-        400,
-        {
-          erro: "Digite uma ideia para o jogo."
-        }
-      );
-    }
+  if (
+    /\bloadstring\s*\(/i.test(codigo)
+  ) {
+    erros.push(
+      "loadstring não deve ser usado neste código gerado."
+    );
+  }
 
-    const prompt = `
-Você é uma IA especialista em criação de jogos para Roblox.
+  if (
+    /\bgetfenv\s*\(/i.test(codigo) ||
+    /\bsetfenv\s*\(/i.test(codigo)
+  ) {
+    avisos.push(
+      "Código utiliza funções de ambiente que podem ser inadequadas no Roblox."
+    );
+  }
 
-Sua tarefa é transformar a ideia abaixo em um projeto de jogo completo e organizado.
+  return {
+    valido: erros.length === 0,
+    erros,
+    avisos
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| LIMPEZA DO CÓDIGO
+|--------------------------------------------------------------------------
+*/
+
+function limparCodigo(codigo) {
+  let resultado = texto(codigo);
+
+  resultado = resultado
+    .replace(/^```lua\s*/i, "")
+    .replace(/^```luau\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  return resultado;
+}
+
+/*
+|--------------------------------------------------------------------------
+| PLANEJADOR
+|--------------------------------------------------------------------------
+*/
+
+async function criarPlano(ideia) {
+  const prompt = `
+Você é o ARQUITETO PRINCIPAL de uma IA especialista em Roblox Studio.
+
+Sua função é transformar a ideia do usuário em uma especificação técnica
+antes de qualquer código ser escrito.
+
+Roblox usa Luau.
 
 IDEIA DO USUÁRIO:
 ${ideia}
 
-Retorne SOMENTE JSON válido.
+Crie SOMENTE JSON válido.
 
-Use exatamente esta estrutura:
+Estrutura:
 
 {
   "title": "Nome do jogo",
@@ -697,150 +476,641 @@ Use exatamente esta estrutura:
   "difficulty": "Fácil, Médio ou Difícil",
   "players": 10,
 
-  "areas": [
+  "areas": [],
+  "objects": [],
+  "npcs": [],
+  "systems": [],
+  "quests": [],
+  "items": [],
+  "shops": [],
+  "pets": [],
+  "remotes": [],
+
+  "script_plan": [
     {
-      "name": "Nome da área",
-      "description": "Descrição"
+      "id": "script_1",
+      "name": "Nome",
+      "type": "Script",
+      "location": "ServerScriptService",
+      "purpose": "Responsabilidade exata",
+      "dependencies": [
+        "OutroScript",
+        "RemoteEvent"
+      ],
+      "description": "Como esse script funciona"
     }
   ],
 
-  "objects": [
-    {
-      "name": "Nome do objeto",
-      "type": "Structure",
-      "description": "Descrição"
-    }
-  ],
-
-  "npcs": [
-    {
-      "name": "Nome do NPC",
-      "type": "Enemy",
-      "hp": 100,
-      "description": "Descrição"
-    }
-  ],
-
-  "systems": [
-    {
-      "name": "Nome do sistema",
-      "description": "Como funciona"
-    }
-  ],
-
-  "quests": [
-    {
-      "name": "Nome da missão",
-      "description": "Objetivo",
-      "reward": 100
-    }
-  ],
-
-  "items": [
-    {
-      "name": "Nome do item",
-      "rarity": "Common",
-      "description": "Descrição"
-    }
-  ],
-
-  "shops": [
-    {
-      "name": "Nome da loja",
-      "items": ["Item 1", "Item 2"]
-    }
-  ],
-
-  "pets": [
-    {
-      "name": "Nome do pet",
-      "ability": "Habilidade"
-    }
-  ],
-
-  "remotes": [
-    {
-      "name": "NomeDoRemote",
-      "description": "Função"
-    }
-  ],
-
-  "scripts": [],
-
-  "next_upgrades": [
-    "Melhoria futura 1",
-    "Melhoria futura 2",
-    "Melhoria futura 3"
-  ]
+  "next_upgrades": []
 }
 
 REGRAS:
 
-1. Crie entre 3 e 8 áreas.
-2. Crie entre 5 e 15 objetos.
-3. Crie entre 3 e 10 NPCs.
-4. Crie sistemas coerentes com o gênero.
-5. Crie pelo menos 3 missões.
-6. Crie pelo menos 5 itens.
-7. Crie pelo menos 1 loja quando fizer sentido.
-8. Crie pets quando fizer sentido.
-9. Crie RemoteEvents relacionados aos sistemas.
-10. Não coloque código Lua dentro do JSON.
-11. Não escreva explicações fora do JSON.
-12. Tudo deve estar relacionado à ideia do usuário.
-13. O jogo deve ser possível de implementar no Roblox Studio.
+1. Não escreva código.
+2. Cada sistema importante deve possuir responsabilidade clara.
+3. Não crie scripts duplicados.
+4. Use Script para lógica do servidor.
+5. Use LocalScript para lógica do cliente.
+6. Use ModuleScript para código reutilizável.
+7. Defina dependências reais.
+8. Defina o caminho completo de cada script.
+9. Não coloque lógica do servidor em LocalScript.
+10. Não coloque lógica exclusiva do cliente em Script.
+11. Evite dependências circulares.
+12. Use RemoteEvents/RemoteFunctions quando cliente e servidor precisarem conversar.
+13. O projeto precisa ser implementável no Roblox Studio.
+14. Não invente APIs inexistentes.
+15. Crie somente os sistemas necessários para a ideia.
+
+Retorne SOMENTE JSON.
 `;
 
-    const raw = await chamarGemini(prompt);
+  const raw = await chamarGemini(prompt, {
+    temperature: 0.15
+  });
 
-    let projeto;
+  return extrairJSON(raw);
+}
 
-    try {
+/*
+|--------------------------------------------------------------------------
+| GERADOR DE SCRIPTS
+|--------------------------------------------------------------------------
+*/
 
-      projeto = JSON.parse(raw);
+async function gerarScripts(plano) {
+  const scriptPlan = arraySeguro(
+    plano.script_plan
+  );
 
-    } catch {
+  if (scriptPlan.length > MAX_SCRIPTS) {
+    scriptPlan.length = MAX_SCRIPTS;
+  }
 
-      const inicio = raw.indexOf("{");
-      const fim = raw.lastIndexOf("}");
+  const resultados = [];
 
-      if (
-        inicio === -1 ||
-        fim === -1 ||
-        fim <= inicio
-      ) {
-        throw new Error(
-          "A Gemini retornou JSON inválido."
-        );
+  for (
+    let index = 0;
+    index < scriptPlan.length;
+    index++
+  ) {
+    const specification =
+      scriptPlan[index];
+
+    const prompt = `
+Você é um engenheiro sênior de Roblox/Luau.
+
+Você precisa implementar UM ÚNICO script de um projeto Roblox.
+
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
+SCRIPT A IMPLEMENTAR:
+${JSON.stringify(
+  specification,
+  null,
+  2
+)}
+
+REGRAS ABSOLUTAS:
+
+1. Escreva código Luau válido.
+2. Retorne SOMENTE JSON.
+3. Não use Markdown.
+4. Não coloque o código dentro de \`\`\`.
+5. Não invente APIs do Roblox.
+6. Respeite o tipo do script.
+7. Respeite a localização.
+8. Respeite as dependências.
+9. Use GetService corretamente.
+10. Prefira referências locais.
+11. Não crie variáveis inexistentes.
+12. Não dependa de objetos que não foram planejados.
+13. Se precisar de um objeto, ele deve aparecer nas dependências.
+14. Não coloque lógica exclusiva do servidor em LocalScript.
+15. Não coloque lógica exclusiva do cliente em Script.
+16. Não use loadstring.
+17. Não coloque chaves/API secrets no código.
+18. Use nomes consistentes.
+19. O código deve ser completo, não um exemplo parcial.
+20. Não escreva comentários dizendo que algo deve ser implementado depois.
+21. Não omita funções importantes.
+22. O código precisa poder ser colado no Roblox Studio.
+
+FORMATO:
+
+{
+  "name": "Nome do script",
+  "type": "Script | LocalScript | ModuleScript",
+  "location": "Caminho",
+  "dependencies": [],
+  "description": "Descrição",
+  "purpose": "Responsabilidade",
+  "code": "CÓDIGO LUA AQUI"
+}
+`;
+
+    const raw = await chamarGemini(prompt, {
+      temperature: 0.1
+    });
+
+    const scriptGerado =
+      normalizarScript(
+        extrairJSON(raw),
+        index
+      );
+
+    scriptGerado.code =
+      limparCodigo(
+        scriptGerado.code
+      );
+
+    resultados.push(
+      scriptGerado
+    );
+  }
+
+  return resultados;
+}
+
+/*
+|--------------------------------------------------------------------------
+| REVISOR
+|--------------------------------------------------------------------------
+*/
+
+async function revisarScript(script, plano) {
+  const validacao =
+    validarScript(script);
+
+  const prompt = `
+Você é o REVISOR DE CÓDIGO de uma IA especialista em Roblox.
+
+Analise cuidadosamente o script abaixo.
+
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
+SCRIPT:
+${JSON.stringify(script, null, 2)}
+
+Analise:
+
+- sintaxe Luau;
+- APIs Roblox;
+- serviços;
+- cliente/servidor;
+- referências;
+- dependências;
+- eventos;
+- RemoteEvents;
+- RemoteFunctions;
+- escopo de variáveis;
+- funções inexistentes;
+- propriedades inexistentes;
+- objetos que podem não existir;
+- problemas de execução;
+- loops problemáticos;
+- conexões de eventos;
+- segurança básica;
+- inconsistências com o projeto.
+
+IMPORTANTE:
+
+Não considere que o código está correto só porque parece correto.
+
+Retorne SOMENTE JSON:
+
+{
+  "approved": true,
+  "score": 0,
+  "errors": [],
+  "warnings": [],
+  "fixes": []
+}
+
+score deve ser de 0 a 100.
+
+Se existir qualquer erro que possa impedir a execução,
+approved deve ser false.
+
+VALIDAÇÃO LOCAL JÁ DETECTADA:
+${JSON.stringify(
+  validacao,
+  null,
+  2
+)}
+`;
+
+  const raw =
+    await chamarGemini(prompt, {
+      temperature: 0.05
+    });
+
+  return extrairJSON(raw);
+}
+
+/*
+|--------------------------------------------------------------------------
+| CORRETOR
+|--------------------------------------------------------------------------
+*/
+
+async function corrigirScript(
+  script,
+  review,
+  plano
+) {
+  const prompt = `
+Você é o CORRETOR FINAL de código Roblox/Luau.
+
+O script abaixo apresentou problemas durante a revisão.
+
+PROJETO:
+${JSON.stringify(plano, null, 2)}
+
+SCRIPT ORIGINAL:
+${JSON.stringify(script, null, 2)}
+
+REVISÃO:
+${JSON.stringify(review, null, 2)}
+
+Corrija TODOS os problemas encontrados.
+
+REGRAS:
+
+1. Preserve a finalidade do script.
+2. Preserve o tipo.
+3. Preserve a localização.
+4. Preserve as dependências válidas.
+5. Não invente APIs.
+6. Não remova funcionalidades importantes sem motivo.
+7. Corrija referências inexistentes.
+8. Corrija problemas cliente/servidor.
+9. Corrija escopo.
+10. Corrija eventos.
+11. Corrija chamadas de serviço.
+12. Não use loadstring.
+13. Não use código Markdown.
+14. Retorne SOMENTE JSON.
+15. O campo code deve conter o código Luau completo.
+
+Formato:
+
+{
+  "name": "Nome",
+  "type": "Script",
+  "location": "ServerScriptService",
+  "dependencies": [],
+  "description": "",
+  "purpose": "",
+  "code": ""
+}
+`;
+
+  const raw =
+    await chamarGemini(prompt, {
+      temperature: 0.05
+    });
+
+  const corrigido =
+    normalizarScript(
+      extrairJSON(raw),
+      0
+    );
+
+  corrigido.code =
+    limparCodigo(
+      corrigido.code
+    );
+
+  return corrigido;
+}
+
+/*
+|--------------------------------------------------------------------------
+| PIPELINE DE QUALIDADE
+|--------------------------------------------------------------------------
+*/
+
+async function verificarEUsar(
+  script,
+  plano
+) {
+  let atual = script;
+
+  const historico = [];
+
+  for (
+    let tentativa = 0;
+    tentativa <= MAX_REVISIONS;
+    tentativa++
+  ) {
+    const review =
+      await revisarScript(
+        atual,
+        plano
+      );
+
+    historico.push({
+      tentativa,
+      review
+    });
+
+    const validacao =
+      validarScript(atual);
+
+    const aprovado =
+      review?.approved === true &&
+      validacao.valido === true;
+
+    if (aprovado) {
+      return {
+        script: atual,
+        status: "approved",
+        score:
+          Number(review.score) || 100,
+        warnings: [
+          ...validacao.avisos,
+          ...arraySeguro(review.warnings)
+        ],
+        revisions: tentativa,
+        history: historico
+      };
+    }
+
+    if (
+      tentativa >= MAX_REVISIONS
+    ) {
+      return {
+        script: atual,
+        status: "needs_review",
+        score:
+          Number(review.score) || 0,
+        warnings: [
+          ...validacao.avisos,
+          ...arraySeguro(review.warnings),
+          ...arraySeguro(review.errors)
+        ],
+        revisions: tentativa,
+        history: historico
+      };
+    }
+
+    atual =
+      await corrigirScript(
+        atual,
+        review,
+        plano
+      );
+  }
+
+  return {
+    script: atual,
+    status: "needs_review",
+    score: 0,
+    warnings: [
+      "Não foi possível concluir a validação."
+    ],
+    revisions: MAX_REVISIONS,
+    history: historico
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| BUILDER DE COMPATIBILIDADE
+|--------------------------------------------------------------------------
+|
+| NÃO É MAIS A ARQUITETURA PRINCIPAL.
+|
+| Serve apenas para clientes antigos que ainda esperam
+| projeto.builder_script.code.
+|
+*/
+
+function criarCompatibilidadeBuilder(scripts) {
+  const blocos = [];
+
+  for (const script of scripts) {
+    blocos.push(
+      [
+        `-- ==================================================`,
+        `-- ${script.name}`,
+        `-- Tipo: ${script.type}`,
+        `-- Localização: ${script.location}`,
+        `-- ==================================================`,
+        script.code
+      ].join("\n")
+    );
+  }
+
+  return {
+    name: "GeneratedScripts",
+    type: "Collection",
+    code: blocos.join(
+      "\n\n"
+    )
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| HANDLER
+|--------------------------------------------------------------------------
+*/
+
+module.exports = async function handler(
+  req,
+  res
+) {
+  if (req.method !== "POST") {
+    return resposta(
+      res,
+      405,
+      {
+        sucesso: false,
+        erro: "Método não permitido."
       }
+    );
+  }
 
-      projeto = JSON.parse(
-        raw.substring(
-          inicio,
-          fim + 1
-        )
+  try {
+    const body =
+      req.body || {};
+
+    const ideia =
+      texto(
+        body.ideia,
+        ""
+      ).trim();
+
+    if (!ideia) {
+      return resposta(
+        res,
+        400,
+        {
+          sucesso: false,
+          erro:
+            "Digite uma ideia para o jogo."
+        }
       );
     }
 
-    projeto = limparProjeto(projeto);
+    /*
+    |--------------------------------------------------------------------------
+    | ETAPA 1 — PLANEJAMENTO
+    |--------------------------------------------------------------------------
+    */
+
+    const plano =
+      await criarPlano(
+        ideia
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | ETAPA 2 — PROJETO BASE
+    |--------------------------------------------------------------------------
+    */
+
+    const projeto =
+      normalizarProjeto(
+        plano
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | ETAPA 3 — GERAÇÃO DOS SCRIPTS
+    |--------------------------------------------------------------------------
+    */
+
+    const scriptsGerados =
+      await gerarScripts(
+        projeto
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | ETAPA 4 — REVISÃO + AUTOCORREÇÃO
+    |--------------------------------------------------------------------------
+    */
+
+    const scriptsFinais = [];
+
+    for (
+      const script of scriptsGerados
+    ) {
+      const resultado =
+        await verificarEUsar(
+          script,
+          projeto
+        );
+
+      const finalScript =
+        resultado.script;
+
+      scriptsFinais.push({
+        ...finalScript,
+
+        quality: {
+          status:
+            resultado.status,
+
+          score:
+            resultado.score,
+
+          revisions:
+            resultado.revisions,
+
+          warnings:
+            resultado.warnings
+        }
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ETAPA 5 — RESULTADO
+    |--------------------------------------------------------------------------
+    */
+
+    projeto.scripts =
+      scriptsFinais;
+
+    /*
+    | Compatibilidade com o frontend antigo.
+    | A nova IA NÃO depende disso.
+    */
 
     projeto.builder_script =
-      gerarBuilder(projeto);
+      criarCompatibilidadeBuilder(
+        scriptsFinais
+      );
+
+    const aprovados =
+      scriptsFinais.filter(
+        (script) =>
+          script.quality?.status ===
+          "approved"
+      ).length;
+
+    const scoreMedio =
+      scriptsFinais.length > 0
+        ? Math.round(
+            scriptsFinais.reduce(
+              (total, script) =>
+                total +
+                Number(
+                  script.quality?.score ||
+                  0
+                ),
+              0
+            ) /
+            scriptsFinais.length
+          )
+        : 0;
+
+    projeto.quality = {
+      total_scripts:
+        scriptsFinais.length,
+
+      approved_scripts:
+        aprovados,
+
+      scripts_needing_review:
+        scriptsFinais.length -
+        aprovados,
+
+      average_score:
+        scoreMedio
+    };
 
     projeto.generated_by =
-      "Roblox AI Studio";
+      "Roblox AI Studio - Script Engine";
+
+    projeto.engine_version =
+      "2.0";
 
     return resposta(
       res,
       200,
       {
         sucesso: true,
-        projeto
+        projeto,
+
+        /*
+        | Acesso direto aos scripts.
+        */
+        scripts:
+          scriptsFinais,
+
+        quality:
+          projeto.quality
       }
     );
 
   } catch (error) {
-
     console.error(
       "ERRO INTERNO:",
       error
@@ -851,10 +1121,13 @@ REGRAS:
       500,
       {
         sucesso: false,
+
         erro:
-          "Não foi possível gerar o jogo.",
+          "Não foi possível gerar o projeto.",
+
         detalhe:
-          error.message
+          error?.message ||
+          "Erro desconhecido."
       }
     );
   }
